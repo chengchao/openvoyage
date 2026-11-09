@@ -2,7 +2,7 @@
 
 Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 
-> **Note**: remote = `chengchao/my-koukai2` (private).
+> **Note**: remote = `chengchao/openvoyage` (public). The old private repo `chengchao/my-koukai2` is archived; its open issues moved here as #1–#16.
 
 ## Conventions
 
