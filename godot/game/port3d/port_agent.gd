@@ -9,6 +9,7 @@ const MODE_NAMES := {
 	PortSession.Mode.CUTSCENE: "cutscene",
 	PortSession.Mode.FACILITY_MENU: "facility_menu",
 	PortSession.Mode.AMOUNT_ENTRY: "amount_entry",
+	PortSession.Mode.GAME_MENU: "game_menu",
 }
 
 var port: PortScene3D
@@ -43,12 +44,17 @@ func observe() -> Dictionary:
 		obs["line"] = flow.director.current_line()
 	if s.mode == PortSession.Mode.AMOUNT_ENTRY:
 		obs["amount"] = {"prompt": s.amount_prompt, "cap": s.amount_cap}
+	var gm := flow.game_menu
+	if gm != null:
+		obs["game_menu"] = {"categories": Array(gm.category_labels()), "items": Array(gm.item_labels()),
+			"category": gm.category_index(), "item": gm.item_index(), "detail": gm.detail_text()}
 	return obs
 
 
 ## 执行一个动作，合法且已执行返回 true。动作：
 ## {"do":"walk","dir":"up|down|left|right","seconds":s} {"do":"choose","index":i}（末项 = 離開）
 ## {"do":"leave"} {"do":"amount","value":n} {"do":"cancel"} {"do":"next"}（剧情下一句）
+## {"do":"menu"}（开游戏内选单） {"do":"menu_select","category":i,"item":j}（移光标） {"do":"close"}（关选单）
 func act(a: Dictionary) -> bool:
 	var flow := port.doors
 	var mode := flow.session.mode
@@ -86,6 +92,24 @@ func act(a: Dictionary) -> bool:
 			if mode != PortSession.Mode.AMOUNT_ENTRY:
 				return false
 			flow.cancel_amount()
+			return true
+		"menu":
+			if mode != PortSession.Mode.WALKING:
+				return false
+			flow.open_menu()
+			return true
+		"menu_select":
+			var c: int = a.get("category", -1)
+			var j: int = a.get("item", -1)
+			if mode != PortSession.Mode.GAME_MENU or j < 0 or j >= GameMenu.items(c).size():
+				return false
+			flow.game_menu.move_category(c - flow.game_menu.category_index())
+			flow.game_menu.move_item(j - flow.game_menu.item_index())
+			return true
+		"close":
+			if mode != PortSession.Mode.GAME_MENU:
+				return false
+			flow.close_menu()
 			return true
 		"next":
 			if mode != PortSession.Mode.CUTSCENE:

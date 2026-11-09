@@ -114,3 +114,58 @@ func test_unimplemented_menu_item_says_not_open_yet() -> void:
 	f.facility_scene.menu_selected.emit(0, "賭博")
 	assert_null(f.amount_entry, "非银行不弹金额输入")
 	assert_true(f.facility_scene.has_dialogue(), "以一句反馈占位")
+
+
+func _press(action: String) -> void:
+	var ev := InputEventAction.new()
+	ev.action = action
+	ev.pressed = true
+	get_viewport().push_input(ev)
+
+
+func test_escape_while_walking_opens_menu_and_it_stays_open() -> void:
+	var f := _flow()
+	_press("ui_cancel")
+	assert_not_null(f.game_menu, "ESC 打开选单，同一次按键不会又把它关掉")
+	assert_true(f.is_busy(), "选单开着时港口不走动")
+	assert_false(f.is_in_facility())
+
+
+func test_escape_in_menu_closes_it() -> void:
+	var f := _flow()
+	_press("ui_cancel")
+	_press("ui_cancel")
+	assert_null(f.game_menu)
+	assert_false(f.is_busy())
+
+
+func test_doors_do_not_open_under_the_menu() -> void:
+	var f := _flow()
+	f.open_menu()
+	f.open(TAVERN)
+	assert_null(f.facility_scene)
+	assert_not_null(f.game_menu)
+
+
+func test_escape_out_of_facility_does_not_open_menu() -> void:
+	var f := _inside(TAVERN)
+	_press("ui_cancel")
+	assert_false(f.is_busy(), "回到港口")
+	assert_null(f.game_menu, "同一次 ESC 不再开选单")
+
+
+func test_menu_not_available_inside_facility() -> void:
+	var f := _inside(TAVERN)
+	f.open_menu()
+	assert_null(f.game_menu)
+	assert_true(f.is_in_facility())
+
+
+func test_unopened_menu_item_keeps_menu_open() -> void:
+	var f := _flow()
+	f.open_menu()
+	f.game_menu.move_category(1)
+	f.game_menu.activate()
+	assert_not_null(f.game_menu)
+	f.close_menu()
+	assert_null(f.game_menu)

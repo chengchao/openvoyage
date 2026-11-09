@@ -1,0 +1,35 @@
+{
+  "categories": [
+    {"key": "info", "label": "情報", "items": [
+      {"key": "fleet", "label": "艦隊情報", "desc": "查看整支艦隊的編成、航速與補給狀況。", "action": ""},
+      {"key": "ship", "label": "船隻情報", "desc": "逐艘查看船隻的船型、耐久與武裝。", "action": ""},
+      {"key": "crew", "label": "人物情報", "desc": "查看同行航海士的能力與現任職務。", "action": ""},
+      {"key": "hero", "label": "主角情報", "desc": "查看主角目前的所在地與資金。", "action": "status"},
+      {"key": "cargo", "label": "貨物情報", "desc": "查看各船載運的貨物與進貨價格。", "action": ""},
+      {"key": "cargo_list", "label": "貨物一覽", "desc": "把全艦隊的貨物彙整成一張清單。", "action": ""},
+      {"key": "discoveries", "label": "發現物", "desc": "回顧航行途中找到的發現物。", "action": ""},
+      {"key": "chart", "label": "航海圖", "desc": "攤開已探明海域的航海圖。", "action": ""},
+      {"key": "log", "label": "航海日誌", "desc": "翻閱至今為止的航海紀錄。", "action": ""},
+      {"key": "port_map", "label": "港口地圖", "desc": "查看目前港口的街道與設施位置。", "action": ""}
+    ]},
+    {"key": "fleet", "label": "艦隊", "items": [
+      {"key": "captain", "label": "更換船長", "desc": "為船隻指派另一位船長。", "action": ""},
+      {"key": "posts", "label": "人事調動", "desc": "調整航海士擔任的職務。", "action": ""},
+      {"key": "crew_split", "label": "水手編組", "desc": "在各船之間重新分配水手人數。", "action": ""},
+      {"key": "crew_stations", "label": "水手配置", "desc": "決定船上水手操帆、划槳與戰鬥的人數。", "action": ""},
+      {"key": "scrap", "label": "銷毀船隻", "desc": "把不再需要的船隻從艦隊中除去。", "action": ""},
+      {"key": "cargo_split", "label": "貨物分配", "desc": "在各船之間搬移貨物與補給。", "action": ""}
+    ]},
+    {"key": "items", "label": "隨身物", "items": [
+      {"key": "equip", "label": "佩戴", "desc": "更換主角佩戴的武器與防具。", "action": ""},
+      {"key": "use", "label": "使用", "desc": "使用身上攜帶的道具。", "action": ""}
+    ]},
+    {"key": "system", "label": "系統", "items": [
+      {"key": "settings", "label": "環境設定", "desc": "調整音樂、音效與訊息速度。", "action": ""},
+      {"key": "save", "label": "儲存進度", "desc": "把目前的進度寫入存檔。", "action": ""},
+      {"key": "load", "label": "讀取進度", "desc": "從存檔繼續先前的航程。", "action": ""},
+      {"key": "title", "label": "回到標題", "desc": "放棄目前的進度，回到標題畫面。", "action": "title"},
+      {"key": "quit", "label": "結束遊戲", "desc": "關閉遊戲。", "action": "quit"}
+    ]}
+  ]
+}

@@ -9,6 +9,13 @@ const GREETING := 0  # MESSAGE.DAT[0] = 店主通用招呼
 static var _cache := {}
 
 
+## 转换产物目录（文本/剧本 JSON，来自 converter）：默认 res://assets-converted，
+## 可用环境变量 KOUKAI2_CONVERTED 覆盖。
+static func converted_dir() -> String:
+	var env := OS.get_environment("KOUKAI2_CONVERTED")
+	return env if env != "" else "res://assets-converted"
+
+
 static func _load(converted_dir: String, name: String) -> Array:
 	var key := converted_dir + "/" + name
 	if _cache.has(key):
