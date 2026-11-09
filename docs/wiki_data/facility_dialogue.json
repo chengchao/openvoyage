@@ -1,0 +1,19 @@
+{
+  "_doc": "设施店主台词映射（人工维护，repo 内）。仅存 MESSAGE.DAT 记录的『编号』+ 置信度——不存原版台词文本（台词是转换产物，依法律边界不进 repo）。真台词由 tools/gen_wiki.py 从本地 godot/assets-converted/text/message.json 取出，写入 gitignore 的 docs/wiki_data/_dialogue.local.js 供 wiki 本地渲染。与店主画/招牌同思路：仓库存引用（编号），产物留本地。",
+  "_fields": "dialogue[key]={confidence: high|medium|tentative, messages:[MESSAGE.DAT 索引...]}。索引据『内容 + 该设施菜单(facility_actions.json)对应』推定的代表性台词（非全集）；MESSAGE.DAT 是上下文共享池、未按设施打标，精确归属在 MAIN.EXE 设施例程内，未逆向——故标置信度，待 DOSBox 实机进门逐条复核。$n/$s/$r/$d/%s/%d 为原版变量占位。",
+  "_confidence_note": "high=台词块连续且与该设施菜单逐项吻合（如 bank 97–120 含存取借还四项）；medium=主块明确但部分行可能他属；tentative=据零散行猜测，工作介紹/武器买卖等块未完全定位，最待实证。",
+  "dialogue": {
+    "market":         { "confidence": "high",      "messages": [3, 5, 6, 8, 9, 10, 13] },
+    "tavern":         { "confidence": "high",      "messages": [17, 18, 19, 31, 32, 35, 146] },
+    "shipyard":       { "confidence": "high",      "messages": [250, 252, 253, 256, 257, 261, 263] },
+    "harbor":         { "confidence": "high",      "messages": [56, 58, 60, 61, 62, 63, 64, 65] },
+    "inn":            { "confidence": "tentative", "messages": [66, 70, 289] },
+    "palace":         { "confidence": "medium",    "messages": [84, 85, 86, 88, 89] },
+    "guild":          { "confidence": "tentative", "messages": [398, 399, 400, 409, 416] },
+    "armory":         { "confidence": "tentative", "messages": [330, 331, 332, 333] },
+    "bank":           { "confidence": "high",      "messages": [97, 100, 103, 105, 106, 107, 108, 110, 114, 115, 116, 117, 119, 120] },
+    "item_shop":      { "confidence": "high",      "messages": [235, 236, 237, 242, 244, 248, 249] },
+    "church":         { "confidence": "high",      "messages": [90, 91, 92, 93, 94, 96] },
+    "fortune_teller": { "confidence": "high",      "messages": [298, 299, 301, 302, 303, 304, 305, 306] }
+  }
+}

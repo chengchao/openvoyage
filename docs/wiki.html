@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大航海時代 II · 航海家手册</title>
+<style>
+  /* ============ 航海图纸 · 设计基调 ============ */
+  :root{
+    --parchment:#efe3c8;
+    --parchment-deep:#e6d6b2;
+    --parchment-edge:#d9c498;
+    --ink:#2c2014;
+    --ink-soft:#5a4630;
+    --sea:#1d3a52;
+    --sea-light:#2e5573;
+    --seal:#a93a26;
+    --gold:#9a7421;
+    --gold-bright:#c19a3f;
+    --line:#b69e72;
+    --font-display:"Kaiti SC","STKaiti","KaiTi","BiauKai",serif;
+    --font-body:"Songti SC","STSong","Noto Serif SC","SimSun",serif;
+    --font-mono:"SF Mono","Menlo","Courier New",monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:24px}
+  body{
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:
+      radial-gradient(ellipse 1200px 800px at 15% -5%, rgba(255,248,225,.55), transparent 60%),
+      radial-gradient(ellipse 900px 700px at 110% 105%, rgba(160,120,60,.18), transparent 60%),
+      var(--parchment);
+    line-height:1.85;
+    min-height:100vh;
+    position:relative;
+  }
+  /* 纸张噪点 + 罗盘恒向线，随纸面滚动（fixed 层在长文档上会触发 WebKit 滚动白屏） */
+  body::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  body::after{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.05;
+    background:
+      repeating-conic-gradient(from 0deg at 82% 4%, transparent 0deg 10.5deg, var(--sea) 10.5deg 11.25deg),
+      repeating-conic-gradient(from 5deg at 8% 96%, transparent 0deg 21.5deg, var(--sea) 21.5deg 22.5deg);
+  }
+
+  .frame{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+
+  /* ============ 卷首 ============ */
+  header.hero{
+    position:relative;
+    border:3px double var(--ink);
+    outline:1px solid var(--line);
+    outline-offset:6px;
+    background:linear-gradient(170deg, rgba(255,250,235,.5), rgba(214,190,140,.25));
+    padding:56px 48px 48px;
+    margin-bottom:46px;
+    overflow:hidden;
+  }
+  .hero-compass{
+    position:absolute;right:-70px;top:-70px;width:340px;height:340px;
+    opacity:.16;animation:spin 240s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hero-kicker{
+    font-family:var(--font-mono);font-size:.72rem;letter-spacing:.45em;
+    text-transform:uppercase;color:var(--seal);margin-bottom:14px;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-size:clamp(2.4rem,6vw,4.2rem);
+    font-weight:700;letter-spacing:.08em;line-height:1.15;
+    color:var(--ink);
+  }
+  h1 .latin{
+    display:block;font-size:.34em;letter-spacing:.28em;color:var(--sea);
+    font-family:Georgia,serif;font-style:italic;font-weight:400;margin-top:10px;
+  }
+  .hero-sub{
+    margin-top:22px;max-width:640px;color:var(--ink-soft);font-size:1.02rem;
+  }
+  .hero-stats{
+    display:flex;flex-wrap:wrap;gap:0;margin-top:34px;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .stat{
+    flex:1 1 110px;padding:14px 10px;text-align:center;
+    border-right:1px solid var(--line);
+  }
+  .stat:last-child{border-right:none}
+  .stat b{
+    display:block;font-family:var(--font-display);font-size:1.9rem;
+    color:var(--sea);line-height:1.1;
+  }
+  .stat span{font-size:.78rem;color:var(--ink-soft);letter-spacing:.12em}
+
+  /* ============ 布局：侧栏 + 正文 ============ */
+  .layout{display:grid;grid-template-columns:208px 1fr;gap:42px;align-items:start}
+  nav.toc{
+    position:sticky;top:24px;
+    border-left:3px solid var(--seal);
+    padding:6px 0 6px 18px;
+  }
+  nav.toc .toc-title{
+    font-family:var(--font-display);font-size:1.05rem;letter-spacing:.3em;
+    color:var(--seal);margin-bottom:14px;
+  }
+  nav.toc a{
+    display:block;text-decoration:none;color:var(--ink-soft);
+    font-size:.92rem;padding:5px 0;letter-spacing:.06em;
+    transition:color .2s, transform .2s;
+  }
+  nav.toc a::before{content:"— ";color:var(--line);transition:color .2s}
+  nav.toc a:hover{color:var(--sea)}
+  nav.toc a.active{color:var(--seal);font-weight:700;transform:translateX(4px)}
+  nav.toc a.active::before{content:"◆ ";color:var(--seal)}
+  .toc-foot{margin-top:22px;font-family:var(--font-mono);font-size:.66rem;color:var(--line);letter-spacing:.1em}
+
+  main{min-width:0}
+  section{margin-bottom:64px}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+  .sec-no{
+    font-family:Georgia,serif;font-style:italic;font-size:2.6rem;
+    color:var(--gold);line-height:1;opacity:.85;
+  }
+  h2{
+    font-family:var(--font-display);font-size:1.9rem;font-weight:700;
+    letter-spacing:.14em;color:var(--ink);
+  }
+  .sec-rule{
+    height:14px;margin:6px 0 26px;
+    background:
+      linear-gradient(var(--line),var(--line)) 0 50%/100% 1px no-repeat;
+    position:relative;
+  }
+  .sec-rule::after{
+    content:"⚓";position:absolute;left:0;top:50%;transform:translate(0,-52%);
+    background:var(--parchment);padding-right:10px;color:var(--gold);font-size:.85rem;
+  }
+  h3{
+    font-family:var(--font-display);font-size:1.2rem;letter-spacing:.1em;
+    color:var(--sea);margin:30px 0 12px;
+  }
+  p{margin-bottom:14px}
+  p.lede{font-size:1.05rem;color:var(--ink-soft)}
+  em.term{font-style:normal;border-bottom:2px solid var(--gold-bright);padding-bottom:1px}
+
+  /* 印章徽记（职业 / 类别） */
+  .seal-badge{
+    display:inline-block;font-family:var(--font-display);font-size:.74rem;
+    padding:1px 8px;border-radius:3px;letter-spacing:.18em;white-space:nowrap;
+    transform:rotate(-1.5deg);
+  }
+  .seal-red{color:#fff;background:var(--seal);box-shadow:1px 1px 0 rgba(0,0,0,.25)}
+  .seal-blue{color:#fff;background:var(--sea)}
+  .seal-gold{border:1.5px solid var(--gold);color:var(--gold)}
+  .seal-plain{color:var(--ink-soft);border:1.5px dashed var(--line)}
+
+  /* ============ 表格：账簿风 ============ */
+  .ledger{width:100%;border-collapse:collapse;margin:18px 0 10px;font-size:.93rem}
+  .ledger caption{
+    caption-side:top;text-align:left;font-family:var(--font-mono);
+    font-size:.7rem;letter-spacing:.2em;color:var(--ink-soft);padding-bottom:8px;
+  }
+  .ledger th{
+    font-family:var(--font-display);font-weight:700;letter-spacing:.12em;
+    text-align:left;color:var(--sea);font-size:.88rem;
+    border-top:2px solid var(--ink);border-bottom:1px solid var(--ink);
+    padding:8px 10px;background:rgba(29,58,82,.05);
+  }
+  .ledger td{
+    padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top;
+  }
+  .ledger tr:nth-child(even) td{background:rgba(182,158,114,.1)}
+  .ledger tr:hover td{background:rgba(29,58,82,.07)}
+  .ledger .fname{font-family:var(--font-display);font-weight:700;white-space:nowrap}
+  .ledger .dim{color:var(--ink-soft);font-size:.88em}
+
+  /* 设施菜单项 chips（据 facility_actions.json 自动生成） */
+  .acts{display:flex;flex-wrap:wrap;gap:6px}
+  .act{
+    font-family:var(--font-body);font-size:.82rem;line-height:1.4;
+    background:rgba(255,252,242,.75);color:var(--ink);
+    border:1px solid var(--line);border-radius:0;padding:1px 8px;
+    box-shadow:2px 2px 0 rgba(44,32,20,.10);
+  }
+  .gen-note{font-size:.74rem;color:var(--ink-soft);font-style:italic;margin-top:6px}
+
+
+  /* 店主台词：结构在库内，台词文本由本地 _dialogue.local.js（gitignore）注入 */
+  .kd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:14px}
+  .kd{border:1px solid var(--line);background:rgba(255,250,235,.4);padding:10px 14px}
+  .kd-h{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:6px}
+  .kd-h b{font-family:var(--font-display);font-size:1.02rem}
+  .kd-c{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.1em;padding:1px 6px;border-radius:2px}
+  .kd-high{color:#2e5e3a;border:1px solid #2e5e3a}
+  .kd-medium{color:var(--gold);border:1px solid var(--gold)}
+  .kd-tentative{color:var(--seal);border:1px dashed var(--seal)}
+  .kd-lines{list-style:none;margin:0;padding:0}
+  .kd-lines li{font-size:.9rem;padding:2px 0 2px 14px;text-indent:-10px;color:var(--ink)}
+  .kd-lines li::before{content:"「";color:var(--ink-soft)}
+  .kd-lines li::after{content:"」";color:var(--ink-soft)}
+  .kd-missing{color:var(--ink-soft);font-style:italic}
+
+  /* 设施检索框 */
+  .search-row{display:flex;align-items:center;gap:12px;margin-top:18px}
+  .search-row input{
+    flex:1;max-width:320px;font-family:var(--font-body);font-size:.95rem;
+    background:rgba(255,252,242,.7);color:var(--ink);
+    border:1px solid var(--ink);border-radius:0;padding:8px 14px;outline:none;
+    box-shadow:3px 3px 0 rgba(44,32,20,.12);
+  }
+  .search-row input:focus{border-color:var(--seal);box-shadow:3px 3px 0 rgba(169,58,38,.25)}
+  .search-row .hint{font-size:.78rem;color:var(--ink-soft)}
+
+  /* ============ 卡片组（主角 / 系统） ============ */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;margin-top:20px}
+  .card{
+    position:relative;border:1px solid var(--ink);
+    background:linear-gradient(160deg, rgba(255,252,242,.65), rgba(222,200,156,.35));
+    padding:20px 20px 16px;
+    box-shadow:4px 4px 0 rgba(44,32,20,.12);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 rgba(44,32,20,.18)}
+  .card .tag{
+    position:absolute;top:-10px;right:12px;font-family:var(--font-mono);
+    font-size:.62rem;letter-spacing:.2em;background:var(--sea);color:var(--parchment);
+    padding:2px 8px;
+  }
+  .card h4{
+    font-family:var(--font-display);font-size:1.18rem;letter-spacing:.08em;
+    color:var(--ink);margin-bottom:2px;
+  }
+  .card .sub{font-size:.78rem;color:var(--gold);letter-spacing:.14em;margin-bottom:10px;font-style:italic;font-family:Georgia,serif}
+
+  /* 主角画像（取自本机转换资产，缺席时显示剪影） */
+  .hero-head{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+  .hero-head .sub{margin-bottom:0}
+  .portrait{
+    flex:0 0 60px;width:60px;height:100px;
+    border:2px solid var(--ink);outline:1px solid var(--line);outline-offset:2px;
+    background:var(--sea);box-shadow:3px 3px 0 rgba(44,32,20,.2);
+  }
+  .portrait img{width:100%;height:100%;display:block;image-rendering:pixelated}
+  .portrait.missing img{display:none}
+  .portrait.missing{
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 80'%3E%3Crect width='48' height='80' fill='%231d3a52'/%3E%3Cg fill='%232e5573'%3E%3Ccircle cx='24' cy='30' r='11'/%3E%3Cpath d='M6 80c0-14 8-22 18-22s18 8 18 22z'/%3E%3C/g%3E%3C/svg%3E")
+      center/cover no-repeat;
+  }
+  .card p{font-size:.88rem;color:var(--ink-soft);margin-bottom:0}
+  .card .meta{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);
+    font-size:.78rem;color:var(--ink-soft);letter-spacing:.06em}
+
+  /* 引文 / 注记 */
+  .marginalia{
+    margin:22px 0;padding:16px 22px;
+    border-left:4px solid var(--gold);
+    background:rgba(154,116,33,.07);
+    font-size:.92rem;color:var(--ink-soft);
+  }
+  .marginalia b{color:var(--ink)}
+
+  /* 新手锦囊 */
+  .tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:18px}
+  .tip{
+    border-top:3px solid var(--seal);background:rgba(255,252,242,.5);
+    padding:16px 18px;font-size:.9rem;
+  }
+  .tip .tip-no{
+    font-family:Georgia,serif;font-style:italic;font-size:1.5rem;color:var(--seal);
+    display:block;margin-bottom:6px;
+  }
+  .tip b{font-family:var(--font-display);letter-spacing:.08em}
+
+  footer{
+    margin-top:70px;padding-top:22px;border-top:3px double var(--ink);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    font-size:.8rem;color:var(--ink-soft);
+  }
+  footer .stamp{
+    font-family:var(--font-display);color:var(--seal);
+    border:2px solid var(--seal);padding:2px 12px;letter-spacing:.3em;
+    transform:rotate(-3deg);opacity:.85;
+  }
+
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr}
+    nav.toc{position:static;border-left:none;border-bottom:1px solid var(--line);
+      display:flex;flex-wrap:wrap;gap:2px 18px;padding:0 0 14px}
+    nav.toc .toc-title{width:100%}
+    header.hero{padding:36px 24px}
+  }
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <!-- ======== 卷首 ======== -->
+  <header class="hero">
+    <svg class="hero-compass" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g fill="none" stroke="#1d3a52" stroke-width="1.2">
+        <circle cx="100" cy="100" r="92"/><circle cx="100" cy="100" r="78"/><circle cx="100" cy="100" r="30"/>
+        <g stroke-width=".6">
+          <path d="M100 8v184M8 100h184M35 35l130 130M165 35L35 165"/>
+        </g>
+      </g>
+      <g fill="#1d3a52">
+        <path d="M100 14 110 96 100 100 90 96Z"/>
+        <path d="M100 186 90 104 100 100 110 104Z" opacity=".55"/>
+        <path d="M14 100 96 90 100 100 96 110Z" opacity=".55"/>
+        <path d="M186 100 104 110 100 100 104 90Z" opacity=".55"/>
+      </g>
+      <g fill="#a93a26"><path d="M100 14 104 92 100 100 96 92Z"/></g>
+      <text x="100" y="34" text-anchor="middle" font-size="13" fill="#1d3a52" font-family="Georgia">N</text>
+    </svg>
+    <div class="hero-kicker">A Navigator's Compendium · Anno Domini 1522</div>
+    <h1>大航海時代 II<span class="latin">Uncharted Waters II — Encyclopædia Navalis</span></h1>
+    <p class="hero-sub">
+      十六世纪，大航海时代的黄金年代。六位出身迥异的航海家，怀着各自的野心与宿命，
+      从同一片大洋上扬帆启程。本手册辑录主角列传、港口设施指南、航海要诀与诸般玩法——
+      愿它伴你从里斯本的码头，驶向世界的尽头。
+    </p>
+    <div class="hero-stats">
+      <div class="stat"><b>101</b><span>港口</span></div>
+      <div class="stat"><b>6</b><span>可选主角</span></div>
+      <div class="stat"><b>7</b><span>文化圈</span></div>
+      <div class="stat"><b>12</b><span>港口设施</span></div>
+      <div class="stat"><b>256</b><span>登场人物</span></div>
+      <div class="stat"><b>1522</b><span>启航之年</span></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- ======== 目录 ======== -->
+    <nav class="toc" id="toc">
+      <div class="toc-title">目 錄</div>
+      <a href="#overview">Ⅰ · 游戏总览</a>
+      <a href="#protagonists">Ⅱ · 六位主角</a>
+      <a href="#facilities">Ⅲ · 港口设施</a>
+      <a href="#sailing">Ⅳ · 航海要诀</a>
+      <a href="#systems">Ⅴ · 玩法系统</a>
+      <a href="#tips">Ⅵ · 新手锦囊</a>
+      <div class="toc-foot">CHARTED · MDXXII</div>
+    </nav>
+
+    <main>
+
+      <!-- ======== Ⅰ 游戏总览 ======== -->
+      <section id="overview">
+        <div class="sec-head"><span class="sec-no">Ⅰ</span><h2>游戏总览 · 一片大洋，六段人生</h2></div>
+        <div class="sec-rule"></div>
+        <p class="lede">
+          《大航海時代 II》（KOEI，1993）是大航海时代系列的巅峰之作。它最具标志性的设计：
+          六位主角共用<em class="term">同一个世界</em>——同一张海图、同一套经济、同一批人物，
+          剧情彼此穿插。你在若昂的故事里遇见的海盗，换一位主角开局，也许就是你自己。
+        </p>
+        <p>
+          游戏没有规定你「必须」做什么。你可以做穿梭于特产港之间的豪商，做为王室开疆的提督，
+          做令商船闻风丧胆的海盗，也可以什么都不管，只为绘出一张完整的世界海图。
+          名声分为<em class="term">冒险、贸易、海战</em>三轨，各自积累、各自开启不同的际遇——
+          这正是「自由航海」的精髓。
+        </p>
+        <p>
+          世界横跨欧罗巴、新大陆、非洲、中东、印度、东南亚与东亚七大文化圈，
+          一百零一座港口各有风貌：北欧的石砌街巷、地中海的白墙红瓦、东方的飞檐木楼。
+          港口的物价随贸易此起彼伏，海上的风与洋流随季节流转——这是一个活着的十六世纪。
+        </p>
+      </section>
+
+      <!-- ======== Ⅱ 六位主角 ======== -->
+      <section id="protagonists">
+        <div class="sec-head"><span class="sec-no">Ⅱ</span><h2>六位主角 · 列传</h2></div>
+        <div class="sec-rule"></div>
+        <p class="lede">
+          选择一位主角，就是选择一种活法。六条故事线难度与玩法各异，且在同一世界中互相交错——
+          全部通关之后，你才算真正读完了这个时代。
+        </p>
+        <div class="cards">
+          <div class="card"><span class="tag">葡萄牙</span>
+            <div class="hero-head">
+              <div class="portrait"><img src="../godot/data/placeholder/images/portrait_00.png" alt="若昂画像" loading="lazy" onerror="this.parentElement.classList.add('missing')"></div>
+              <div><h4>若昂</h4><div class="sub">探险家 · 王道主线</div></div>
+            </div>
+            <p>名门法雷尔家的少爷，继承探险家父亲的遗志，从里斯本启航，追寻传说中沉没的大陆。
+            剧情最完整、引导最充分的一线，初次航海者的不二之选。</p>
+            <div class="meta">主轨：冒险 <span class="seal-badge seal-blue">推荐新手</span></div>
+          </div>
+          <div class="card"><span class="tag">西班牙</span>
+            <div class="hero-head">
+              <div class="portrait"><img src="../godot/data/placeholder/images/portrait_01.png" alt="卡塔莉娜画像" loading="lazy" onerror="this.parentElement.classList.add('missing')"></div>
+              <div><h4>卡塔莉娜</h4><div class="sub">女提督 · 复仇之刃</div></div>
+            </div>
+            <p>本是舰队军官，因恋人与弟弟之死愤而背离祖国，率舰队向西班牙复仇。
+            开局便有强力舰队，玩法以海战为主，火炮与接舷是她的语言。</p>
+            <div class="meta">主轨：海战 <span class="seal-badge seal-red">高烈度</span></div>
+          </div>
+          <div class="card"><span class="tag">英格兰</span>
+            <div class="hero-head">
+              <div class="portrait"><img src="../godot/data/placeholder/images/portrait_02.png" alt="奥特罗画像" loading="lazy" onerror="this.parentElement.classList.add('missing')"></div>
+              <div><h4>奥特罗</h4><div class="sub">皇家海军 · 私掠提督</div></div>
+            </div>
+            <p>奉女王密令出海的军人，以私掠许可为剑，与强敌的无敌舰队周旋于大洋。
+            军人路线：接受王命、击沉敌舰、换取军功与爵位。</p>
+            <div class="meta">主轨：海战 / 任务驱动</div>
+          </div>
+          <div class="card"><span class="tag">尼德兰</span>
+            <div class="hero-head">
+              <div class="portrait"><img src="../godot/data/placeholder/images/portrait_03.png" alt="恩斯特画像" loading="lazy" onerror="this.parentElement.classList.add('missing')"></div>
+              <div><h4>恩斯特·洛佩斯</h4><div class="sub">地理学家 · 丈量世界</div></div>
+            </div>
+            <p>周游世界、立志绘出一份正确世界地图的学者，与地理学家梅尔卡特相交甚笃。
+            探索与测绘路线：发现的每一段海岸线，都是写进地图的一笔。</p>
+            <div class="meta">主轨：冒险 / 测绘</div>
+          </div>
+          <div class="card"><span class="tag">意大利</span>
+            <div class="hero-head">
+              <div class="portrait"><img src="../godot/data/placeholder/images/portrait_04.png" alt="皮埃特罗画像" loading="lazy" onerror="this.parentElement.classList.add('missing')"></div>
+              <div><h4>皮埃特罗·康迪</h4><div class="sub">没落贵族 · 寻宝浪子</div></div>
+            </div>
+            <p>家道中落、背负巨债的乐天派，变卖家产换来一条船，要靠寻宝翻身还债。
+            囊中羞涩的开局与豁达的性子，造就一条笑中带泪的冒险线。</p>
+            <div class="meta">主轨：冒险 / 寻宝</div>
+          </div>
+          <div class="card"><span class="tag">奥斯曼</span>
+            <div class="hero-head">
+              <div class="portrait"><img src="../godot/data/placeholder/images/portrait_05.png" alt="阿兰·维斯特画像" loading="lazy" onerror="this.parentElement.classList.add('missing')"></div>
+              <div><h4>阿兰·维斯特</h4><div class="sub">少年商人 · 白手起家</div></div>
+            </div>
+            <p>出身市井，凭一艘小船与微薄本钱闯荡地中海，立志成为冠绝东西的大豪商。
+            纯正的贸易路线：低买高卖、开辟商路、以金币丈量世界。</p>
+            <div class="meta">主轨：贸易 <span class="seal-badge seal-gold">理财流</span></div>
+          </div>
+        </div>
+        <div class="marginalia">
+          <b>世界是同一个：</b>无论选谁，101 座港口、各国势力与登场人物都共用一套。
+          其他主角会以 NPC 身份在你的故事里登场——在酒馆偶遇另一位「主角」，是本作最迷人的瞬间之一。
+        </div>
+      </section>
+
+      <!-- ======== Ⅲ 港口设施 ======== -->
+      <section id="facilities">
+        <div class="sec-head"><span class="sec-no">Ⅲ</span><h2>港口设施 · 上岸指南</h2></div>
+        <div class="sec-rule"></div>
+        <p class="lede">
+          每座港口最多有十二类设施，认招牌就能找到门：纹章盾是行会、金器是银行、柱状卷轴是道具屋。
+          走到门口正面推门即可进入。
+        </p>
+        <div class="search-row">
+          <input type="search" id="facFilter" placeholder="检索设施 / 用途 / 招牌…" aria-label="检索设施">
+          <span class="hint" id="facCount"></span>
+        </div>
+        <table class="ledger" id="facTable">
+          <caption>PORT FACILITIES · 上岸办事一览</caption>
+          <thead>
+            <tr><th>设施</th><th>招牌</th><th>菜单项</th><th>能做什么</th><th>类别</th></tr>
+          </thead>
+          <tbody>
+            <!-- GEN:facilities:start -->
+            <tr><td class="fname">交易所</td><td>天平秤</td><td><div class="acts"><span class="act">buy_goods</span><span class="act">sell_goods</span><span class="act">invest_market</span><span class="act">show_prices</span></div></td><td>买卖贸易品。每港物价不同，特产便宜、舶来品昂贵——低买高卖正是发家之本。</td><td><span class="seal-badge seal-gold">贸易</span></td></tr>
+            <tr><td class="fname">酒馆</td><td>酒杯</td><td><div class="acts"><span class="act">hire_sailor</span><span class="act">dismiss_sailor</span><span class="act">drink_talk</span><span class="act">chat_navigator</span><span class="act">bar_girl</span><span class="act">gamble</span></div></td><td>雇佣水手、招募航海士伙伴、向老板和客人打探传闻情报；也是剧情邂逅的高发地。</td><td><span class="seal-badge seal-blue">人脉</span></td></tr>
+            <tr><td class="fname">造船所</td><td>船锚</td><td><div class="acts"><span class="act">build_ship</span><span class="act">buy_used_ship</span><span class="act">repair_ship</span><span class="act">sell_ship</span><span class="act">refit_ship</span><span class="act">invest_industry</span></div></td><td>购买新船、出售旧船、改造船只（炮门、船仓、船首像），打造你的旗舰与船队。</td><td><span class="seal-badge seal-blue">船务</span></td></tr>
+            <tr><td class="fname">港务局</td><td>旗帜</td><td><div class="acts"><span class="act">set_sail</span><span class="act">resupply</span><span class="act">dry_dock</span></div></td><td>办理出入港手续、补给查询等港口公务；远航前别忘了来一趟。</td><td><span class="seal-badge seal-blue">船务</span></td></tr>
+            <tr><td class="fname">旅馆</td><td>床铺</td><td><div class="acts"><span class="act">chat_navigator</span><span class="act">port_support</span><span class="act">sleep</span></div></td><td>休息恢复体力、留宿过夜；不少剧情人物也会在此等你。</td><td><span class="seal-badge seal-plain">休整</span></td></tr>
+            <tr><td class="fname">王宫</td><td>王冠</td><td><div class="acts"><span class="act">audience_king</span><span class="act">apply_nationality</span><span class="act">request_funds</span><span class="act">request_ship</span><span class="act">secret_meeting</span></div></td><td>谒见国王或公爵，领受敕命任务，凭功勋获赐爵位与封赏——出人头地之路。</td><td><span class="seal-badge seal-red">功名</span></td></tr>
+            <tr><td class="fname">行会</td><td>纹章盾</td><td><div class="acts"><span class="act">job_listing</span><span class="act">nation_info</span></div></td><td>承接委托工作：护航、讨伐、运送……完成可得报酬与名声，缺钱时的可靠营生。</td><td><span class="seal-badge seal-red">功名</span></td></tr>
+            <tr><td class="fname">武器屋</td><td>刀剑</td><td><div class="acts"><span class="act">store_equipment</span><span class="act">equip</span><span class="act">exchange_equipment</span></div></td><td>购置剑与铠甲。决斗时的胜负，一半在剑术，一半在你腰间的装备。</td><td><span class="seal-badge seal-red">武备</span></td></tr>
+            <tr><td class="fname">银行</td><td>金器</td><td><div class="acts"><span class="act">deposit</span><span class="act">withdraw</span><span class="act">loan</span><span class="act">repay</span></div></td><td>存款、提款。金币随船沉没就血本无归——大宗财产务必存进银行。</td><td><span class="seal-badge seal-gold">贸易</span></td></tr>
+            <tr><td class="fname">道具屋</td><td>柱状卷轴</td><td><div class="acts"><span class="act">buy_item</span><span class="act">sell_item</span></div></td><td>买进、卖出各类道具：望远镜、海图、奇珍异宝……冒险路上的百宝箱。</td><td><span class="seal-badge seal-gold">补给</span></td></tr>
+            <tr><td class="fname">教会</td><td>十字架</td><td><div class="acts"><span class="act">worship</span><span class="act">donate</span></div></td><td>祈祷与捐献，安抚船员之心；某些誓约与剧情也在神前完成。</td><td><span class="seal-badge seal-plain">休整</span></td></tr>
+            <tr><td class="fname">占卜师</td><td>水晶帐幕</td><td><div class="acts"><span class="act">fortune</span><span class="act">fortune</span><span class="act">fortune</span><span class="act">fortune</span></div></td><td>占卜吉凶，获得下一步剧情与宝藏所在的暗示——迷航时来此问路。</td><td><span class="seal-badge seal-plain">情报</span></td></tr>
+            <!-- GEN:facilities:end -->
+          </tbody>
+        </table>
+        <p class="gen-note">本表由 tools/gen_wiki.py 自动生成：设施/顺序取自 facilities.json，菜单项取自 facility_actions.json（与原版 MENU.DAT 解码逐项对齐，test_facility_actions.py 钉死），招牌/导读/类别取自 facilities_prose.json。</p>
+
+        <div class="marginalia">
+          <b>认招牌：</b>设施门旁都挂着图案招牌，七大文化圈的建筑外观各不相同，但招牌图案全球通用——
+          认熟十二块招牌，到了异国他乡也不会找错门。
+        </div>
+
+        <h3>店主台词 · 进门寒暄与各项应答</h3>
+        <p class="gen-note">
+          据 docs/wiki_data/facility_dialogue.json（设施→MESSAGE.DAT 索引，仓库内仅存编号、不存台词）
+          渲染你本地 message.json 的解码台词。$n/$s/$r/$d、%s/%d 为原版变量占位；
+          台词按内容+菜单推定归属，置信度见各设施徽记，待 DOSBox 实机逐条复核。
+        </p>
+        <div id="dialogue-root" class="kd-grid"></div>
+      </section>
+
+      <!-- ======== Ⅳ 航海要诀 ======== -->
+      <section id="sailing">
+        <div class="sec-head"><span class="sec-no">Ⅳ</span><h2>航海要诀 · 风、海流与补给</h2></div>
+        <div class="sec-rule"></div>
+        <p class="lede">
+          帆船不是想去哪就去哪的。读懂风与洋流，备足水粮，才配得上「航海家」三个字。
+        </p>
+        <h3>风与海流</h3>
+        <p>
+          每片海域都有随<em class="term">季节</em>变化的风向与洋流：顺风顺流一日千里，顶风逆流寸步难行。
+          跨洋远航前先想想季风——比如借冬季的东北信风下西洋，乘夏季的西南季风去印度，
+          是真实历史上香料商人的走法，在这里同样奏效。
+        </p>
+        <h3>补给与船员</h3>
+        <p>
+          出港前在港口备齐<em class="term">水、粮食与木材</em>（修船用料）。水粮按船员人数消耗，
+          长途断水断粮会让船员士气崩溃、疾病蔓延，甚至酿成叛变。沿岸航行多停港，
+          跨洋之前算好天数——这是每位船长的必修课。
+        </p>
+        <h3>七大文化圈</h3>
+        <table class="ledger">
+          <caption>CULTURAL SPHERES · 世界风土志</caption>
+          <thead><tr><th>文化圈</th><th>风土印象</th></tr></thead>
+          <tbody>
+            <tr><td class="fname">北欧</td><td>石砌的灰色街巷，毛织品与琥珀的故乡。</td></tr>
+            <tr><td class="fname">地中海</td><td>白墙红瓦，艺术品与玻璃器的集散地，诸主角的起点。</td></tr>
+            <tr><td class="fname">新大陆</td><td>大洋彼岸的未知海岸，贵金属的传说与殖民地的机遇。</td></tr>
+            <tr><td class="fname">非洲</td><td>漫长的西岸航线，象牙与黄金海岸。</td></tr>
+            <tr><td class="fname">中东</td><td>清真寺的穹顶之下，地毯与香水的巴扎。</td></tr>
+            <tr><td class="fname">印度·东南亚</td><td>胡椒、肉桂、丁香——令全欧洲疯狂的香料群岛。</td></tr>
+            <tr><td class="fname">东亚</td><td>飞檐木楼的港町，丝绸、瓷器与茶叶的故乡，航路的东端。</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ======== Ⅴ 玩法系统 ======== -->
+      <section id="systems">
+        <div class="sec-head"><span class="sec-no">Ⅴ</span><h2>玩法系统 · 商、战、剑</h2></div>
+        <div class="sec-rule"></div>
+        <div class="cards">
+          <div class="card"><span class="tag">贸易</span>
+            <h4>跑商与物价</h4><div class="sub">Mercatura</div>
+            <p>每港有特产与紧俏货，物价随买卖浮动：大量抛售会砸价，扫货会抬价。
+            发现一条「便宜买进 → 高价卖出」的航线，就守住它，直到市场教你换一条。</p>
+            <div class="meta">提升贸易名声 · 通往豪商之路</div>
+          </div>
+          <div class="card"><span class="tag">海战</span>
+            <h4>舰队对决</h4><div class="sub">Bellum Navale</div>
+            <p>海上遭遇敌对舰队即进入回合制海战：抢占风向、炮击削帆、接舷夺船。
+            击破敌方旗舰可令全军溃散；俘获的船只能编入己方舰队或卖钱。</p>
+            <div class="meta">提升海战名声 · 海盗与提督之路</div>
+          </div>
+          <div class="card"><span class="tag">决斗</span>
+            <h4>船长单挑</h4><div class="sub">Duellum</div>
+            <p>接舷战与剧情冲突常以两位船长的剑术决斗收场。出招分攻防与虚实，
+            武器屋的好剑好甲能实打实地救命——别让你的船长赤手空拳。</p>
+            <div class="meta">装备购自武器屋</div>
+          </div>
+          <div class="card"><span class="tag">探险</span>
+            <h4>海图与发现</h4><div class="sub">Explorandi</div>
+            <p>未踏足的海域在海图上是一片空白。亲手把它航成实线，寻访传闻中的秘宝与奇观，
+            冒险名声随之而来——有些故事，只讲给走得最远的人听。</p>
+            <div class="meta">提升冒险名声</div>
+          </div>
+          <div class="card"><span class="tag">功名</span>
+            <h4>爵位与敕命</h4><div class="sub">Honores</div>
+            <p>名声足够时谒见君主，可领受敕命任务；完成则积累功勋、晋升爵位。
+            头衔不只是虚名——它改变诸国对你的态度，也解开新的剧情。</p>
+            <div class="meta">谒见于王宫</div>
+          </div>
+          <div class="card"><span class="tag">伙伴</span>
+            <h4>航海士与船队</h4><div class="sub">Socii</div>
+            <p>一个人开不动一支舰队。在酒馆招募航海士，任命他们做各船船长、会计、瞭望……
+            人尽其才，舰队才能远行。有的伙伴，只与特定的主角有缘。</p>
+            <div class="meta">招募于酒馆</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======== Ⅵ 新手锦囊 ======== -->
+      <section id="tips">
+        <div class="sec-head"><span class="sec-no">Ⅵ</span><h2>新手锦囊 · 启航五诫</h2></div>
+        <div class="sec-rule"></div>
+        <div class="tips">
+          <div class="tip"><span class="tip-no">壹</span><b>钱存银行</b><br>随身金币会随海难与劫掠一起沉没。回港先存钱，再谈别的。</div>
+          <div class="tip"><span class="tip-no">贰</span><b>水粮宁多勿少</b><br>按航程天数备双份。断粮的代价是士气、疾病与叛变。</div>
+          <div class="tip"><span class="tip-no">叁</span><b>常去酒馆</b><br>传闻就是路标：剧情下一步、特产行情、宝藏线索，多半从酒杯边来。</div>
+          <div class="tip"><span class="tip-no">肆</span><b>顺风而行</b><br>出海前看季节。绕一点的顺风路，常常快过笔直的顶风路。</div>
+          <div class="tip"><span class="tip-no">伍</span><b>迷路找占卜师</b><br>剧情卡住、不知该去哪座港？水晶球里有下一站的暗示。</div>
+        </div>
+        <div class="marginalia">
+          <b>最后一句：</b>这游戏最大的宝藏不是金币，是「想去哪就去哪」的那片海。祝顺风。
+        </div>
+      </section>
+
+      <footer>
+        <div>大航海時代 II · 航海家手册 · 非官方爱好者百科</div>
+        <div class="stamp">順 風 滿 帆</div>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script>
+  // 目录滚动定位（scroll-spy）
+  const links=[...document.querySelectorAll('nav.toc a')];
+  const secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const spy=new IntersectionObserver(es=>{
+    es.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.toggle('active',l.getAttribute('href')==='#'+e.target.id));
+      }
+    });
+  },{rootMargin:'-15% 0px -70% 0px'});
+  secs.forEach(s=>s&&spy.observe(s));
+
+  // 设施检索
+  const input=document.getElementById('facFilter');
+  const rows=[...document.querySelectorAll('#facTable tbody tr')];
+  const count=document.getElementById('facCount');
+  function applyFilter(){
+    const q=input.value.trim().toLowerCase();
+    let n=0;
+    rows.forEach(r=>{
+      const hit=!q||r.textContent.toLowerCase().includes(q);
+      r.style.display=hit?'':'none';
+      if(hit)n++;
+    });
+    count.textContent=q?`命中 ${n} / ${rows.length} 处`:`共 ${rows.length} 处设施`;
+  }
+  input.addEventListener('input',applyFilter);
+  applyFilter();
+</script>
+
+<!-- 店主台词文本：本地转换产物，gitignore，非库内文件；缺失时下方渲染降级提示。 -->
+<script src="wiki_data/_dialogue.local.js"></script>
+<script>
+(function(){
+  const root=document.getElementById('dialogue-root');
+  if(!root) return;
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const data=window.FACILITY_DIALOGUE;
+  if(!Array.isArray(data)||!data.length){
+    root.className='';
+    root.innerHTML='<p class="kd-missing">本地台词资产未生成或缺失。运行 '
+      +'<code>python3 tools/gen_wiki.py</code>（需本地 godot/assets-converted/text/message.json）后刷新本页。</p>';
+    return;
+  }
+  const CONF={high:'高·块吻合',medium:'推定',tentative:'待考'};
+  root.innerHTML=data.map(f=>{
+    const lines=(f.lines||[]).map(l=>`<li>${esc(l)}</li>`).join('')
+      || '<li class="kd-missing">（无台词）</li>';
+    const c=f.confidence||'tentative';
+    return `<div class="kd"><div class="kd-h"><b>${esc(f.name)}</b>`
+      +`<span class="kd-c kd-${esc(c)}">${CONF[c]||esc(c)}</span></div>`
+      +`<ul class="kd-lines">${lines}</ul></div>`;
+  }).join('');
+})();
+</script>
+</body>
+</html>

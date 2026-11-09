@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  converter:
+    name: Python 转换管线测试
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - name: pytest（无原版资产 → skip-if-missing 自动跳过）
+        working-directory: converter
+        run: uv run pytest -q
+
+  godot:
+    name: Godot GUT + 冒烟验收
+    runs-on: ubuntu-22.04
+    env:
+      GODOT_VERSION: "4.3"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 下载 Godot 4.3 headless
+        run: |
+          set -e
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          wget -q "$url" -O godot.zip
+          unzip -q godot.zip
+          sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+          godot --version
+
+      - name: 导入资源（首次导入会生成缓存，故跑两遍）
+        run: |
+          godot --headless --path godot --import || true
+          godot --headless --path godot --import
+
+      - name: GUT 全部测试（红灯即 CI 失败）
+        run: godot --headless --path godot -s addons/gut/gut_cmdln.gd
+
+      - name: 冒烟验收（启动→主菜单→退出，exit 0）
+        run: godot --headless --path godot -s tests/smoke/smoke_test.gd
+
+# 导出 Linux/macOS 构建（计划 §1）留待后续里程碑：需下载导出模板，体积大，
+# 暂不纳入每次 push 的快速门禁；先以「测试 + 冒烟全绿」作为可玩性硬门槛。

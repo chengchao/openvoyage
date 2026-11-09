@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "koukai2/triggers.schema.json",
+  "title": "Event trigger index",
+  "description": "Flat list the port loop queries. The engine forms a key from (current port, facility underfoot, current chapter) and, for 'stage' entries, from a story-stage/flag instead of location. First match wins; facility 'default' is the port-wide fallback.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["scenario", "chapter", "type", "facility", "event"],
+    "properties": {
+      "scenario": { "type": "integer", "minimum": 0, "maximum": 6 },
+      "chapter":  { "type": "integer", "minimum": 0, "description": "Section index in SNRn.DAT; the engine's current-chapter counter selects this." },
+      "home_port": { "type": ["integer", "null"], "description": "Scenario anchor port (João=0 Lisbon, etc.)." },
+      "type": {
+        "enum": ["facility", "stage"],
+        "description": "'facility' = fires on entering a facility at a port; 'stage' = fires by story stage/flag, location-independent (id high byte 0xA0-0xA3)."
+      },
+      "port": {
+        "type": ["integer", "null"],
+        "description": "Port id where a 'facility' event fires (event-id high byte). null for 'stage' events."
+      },
+      "facility": {
+        "type": "string",
+        "description": "market|tavern|shipyard|harbor|inn|palace|bank|house|item_shop|guild|church|fortune|special_15|default|unknown_0xNN"
+      },
+      "facility_code": { "type": "integer", "description": "Raw low byte (0x00-0x0B, 0x15, 0xFF)." },
+      "stage": { "type": ["integer", "null"], "description": "Story-stage byte (0xA0-0xA3) for 'stage' events." },
+      "event": { "type": "string", "description": "Reference to events/snr{n}.json -> chapter -> label, e.g. 'snr1/c0/L002c'." }
+    },
+    "additionalProperties": false
+  }
+}

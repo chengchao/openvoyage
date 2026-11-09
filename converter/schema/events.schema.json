@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "koukai2/events.schema.json",
+  "title": "Event scripts (one file per scenario)",
+  "description": "One script per chapter-section, with multiple labelled entry points (one per trigger). Faithful: events share code and jump into one another, so each chapter is one command list with labels rather than isolated per-event scripts.",
+  "type": "object",
+  "required": ["scenario", "chapters"],
+  "properties": {
+    "scenario": { "type": "integer", "minimum": 0, "maximum": 6 },
+    "scen_field": { "type": "string", "description": "Raw u16 scenario field from SNDT header." },
+    "home_port": { "type": ["integer", "null"] },
+    "chapters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "entries", "script"],
+        "properties": {
+          "index": { "type": "integer", "minimum": 0 },
+          "entries": {
+            "type": "array",
+            "description": "Entry points into this chapter's script (the SNR TableB).",
+            "items": {
+              "type": "object",
+              "required": ["trigger_id", "label", "type", "facility"],
+              "properties": {
+                "trigger_id": { "type": "string", "description": "Raw 4-hex event id." },
+                "label": { "type": "string" },
+                "type": { "enum": ["facility", "stage"] },
+                "port": { "type": ["integer", "null"] },
+                "facility": { "type": "string" },
+                "facility_code": { "type": "integer" },
+                "stage": { "type": ["integer", "null"] }
+              },
+              "additionalProperties": false
+            }
+          },
+          "script": {
+            "type": "array",
+            "description": "Ordered commands and label markers.",
+            "items": { "$ref": "#/$defs/node" }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "node": {
+      "oneOf": [
+        { "type": "object", "required": ["label"], "properties": { "label": { "type": "string" } }, "additionalProperties": false },
+        { "$ref": "#/$defs/command" }
+      ]
+    },
+    "command": {
+      "type": "object",
+      "required": ["op"],
+      "properties": { "op": { "type": "string" } },
+      "oneOf": [
+        { "properties": { "op": { "const": "wait" } }, "required": ["op"], "additionalProperties": false },
+        { "properties": { "op": { "const": "end" } }, "required": ["op"], "additionalProperties": false },
+        { "properties": { "op": { "const": "window" }, "arg": { "type": "integer" } }, "required": ["op", "arg"], "additionalProperties": false },
+        { "properties": { "op": { "const": "portrait" }, "kao": { "type": "integer", "description": "KAO face index (CC, immediate)." }, "from_var": { "type": "integer", "description": "CD: face index read from this var slot (50/51 = speaker face)." } }, "required": ["op"], "additionalProperties": false },
+        { "properties": { "op": { "const": "sound" }, "id": { "type": "integer", "description": "Sound-effect id (CA); gated by the sound-enable flag." } }, "required": ["op", "id"], "additionalProperties": false },
+        { "properties": { "op": { "const": "music" }, "id": { "type": "integer", "description": "Music id (F4; FMDRV/AdLib)." } }, "required": ["op", "id"], "additionalProperties": false },
+        { "properties": { "op": { "const": "query" }, "code": { "type": "string", "description": "DC/D0: dynamic game-data lookup written into a script variable (resolves $s name / $r port / $d number)." }, "args": { "type": "array", "items": { "type": "integer" } } }, "required": ["op", "code", "args"], "additionalProperties": false },
+        { "properties": { "op": { "const": "say" }, "text": { "type": "string", "description": "Text id into text/snr{n}.json." } }, "required": ["op", "text"], "additionalProperties": false },
+        { "properties": { "op": { "const": "jump" }, "to": { "type": "string" }, "unresolved": { "type": "boolean", "description": "Target is outside this chapter's script (cross-section)." } }, "required": ["op", "to"], "additionalProperties": false },
+        { "properties": { "op": { "const": "branch" }, "if": { "enum": ["set", "clear"], "description": "Engine-verified: 'set' = AC (jump if flag set); 'clear' = AD (jump if flag clear)." }, "flag": { "type": "integer" }, "to": { "type": "string" }, "unresolved": { "type": "boolean", "description": "Target is outside this chapter's script (cross-section)." } }, "required": ["op", "if", "flag", "to"], "additionalProperties": false },
+        { "properties": { "op": { "const": "cond" }, "code": { "type": "string", "description": "Raw group-2 opcode (richer two-flag / var-compare condition form)." }, "args": { "type": "array", "items": { "type": "integer" } }, "to": { "type": "string" }, "unresolved": { "type": "boolean" } }, "required": ["op", "code", "args", "to"], "additionalProperties": false },
+        { "properties": { "op": { "const": "arith" }, "fn": { "enum": ["add", "sub", "mul", "div", "or", "and", "shr", "shl"] }, "args": { "type": "array", "items": { "type": "integer" } } }, "required": ["op", "fn", "args"], "additionalProperties": false },
+        { "properties": { "op": { "const": "set" }, "code": { "type": "string", "description": "Raw group-0 assignment opcode; args = dest/source operand bytes (source-type bitfields not yet fully labelled)." }, "args": { "type": "array", "items": { "type": "integer" } } }, "required": ["op", "code", "args"], "additionalProperties": false },
+        { "properties": { "op": { "const": "raw" }, "code": { "type": "string" }, "bytes": { "type": "array", "items": { "type": "integer", "minimum": 0, "maximum": 255 } } }, "required": ["op", "code", "bytes"], "additionalProperties": false }
+      ]
+    }
+  }
+}

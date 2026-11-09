@@ -1,0 +1,567 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/port3d/port_scene_3d.gd" id="root"]
+[ext_resource type="Script" path="res://game/port3d/port_door.gd" id="door"]
+
+[sub_resource type="StandardMaterial3D" id="m_stone"]
+albedo_color = Color(0.62, 0.58, 0.52, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="m_plaster"]
+albedo_color = Color(0.86, 0.80, 0.68, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="m_plaster2"]
+albedo_color = Color(0.78, 0.70, 0.60, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="m_roof"]
+albedo_color = Color(0.68, 0.33, 0.22, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="m_wood"]
+albedo_color = Color(0.45, 0.30, 0.18, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="m_door"]
+albedo_color = Color(0.22, 0.13, 0.08, 1)
+
+[sub_resource type="StandardMaterial3D" id="m_water"]
+transparency = 1
+albedo_color = Color(0.12, 0.32, 0.45, 0.85)
+metallic = 0.4
+roughness = 0.08
+
+[sub_resource type="StandardMaterial3D" id="m_hill"]
+albedo_color = Color(0.36, 0.42, 0.32, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="m_sail"]
+albedo_color = Color(0.92, 0.88, 0.78, 1)
+
+[sub_resource type="StandardMaterial3D" id="m_lamp"]
+albedo_color = Color(1, 0.8, 0.5, 1)
+emission_enabled = true
+emission = Color(1, 0.7, 0.35, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="BoxShape3D" id="door_shape"]
+size = Vector3(1.6, 2, 1)
+
+[sub_resource type="BoxShape3D" id="departure_shape"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxShape3D" id="wall0"]
+size = Vector3(1, 6, 60)
+
+[sub_resource type="BoxShape3D" id="wall1"]
+size = Vector3(1, 6, 60)
+
+[sub_resource type="BoxShape3D" id="wall2"]
+size = Vector3(50, 8, 1)
+
+[sub_resource type="BoxShape3D" id="wall3"]
+size = Vector3(9, 3, 0.5)
+
+[sub_resource type="BoxShape3D" id="wall4"]
+size = Vector3(20, 3, 0.5)
+
+[sub_resource type="BoxShape3D" id="wall5"]
+size = Vector3(11, 3, 0.5)
+
+[sub_resource type="BoxShape3D" id="wall6"]
+size = Vector3(0.5, 3, 8.5)
+
+[sub_resource type="BoxShape3D" id="wall7"]
+size = Vector3(0.5, 3, 8.5)
+
+[sub_resource type="BoxShape3D" id="wall8"]
+size = Vector3(3, 3, 0.5)
+
+[sub_resource type="BoxShape3D" id="wall9"]
+size = Vector3(0.5, 3, 8.5)
+
+[sub_resource type="BoxShape3D" id="wall10"]
+size = Vector3(0.5, 3, 8.5)
+
+[sub_resource type="BoxShape3D" id="wall11"]
+size = Vector3(3, 3, 0.5)
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+sky_top_color = Color(0.32, 0.52, 0.78, 1)
+sky_horizon_color = Color(0.86, 0.80, 0.70, 1)
+ground_horizon_color = Color(0.86, 0.80, 0.70, 1)
+sun_angle_max = 20.0
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="env"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 0.6
+tonemap_mode = 2
+ssao_enabled = true
+ssao_radius = 1.5
+glow_enabled = true
+glow_intensity = 0.9
+glow_bloom = 0.15
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.004
+volumetric_fog_albedo = Color(1, 0.92, 0.8, 1)
+adjustment_enabled = true
+adjustment_saturation = 1.1
+
+[sub_resource type="CameraAttributesPractical" id="cam_attr"]
+dof_blur_far_enabled = true
+dof_blur_far_distance = 36.0
+dof_blur_far_transition = 16.0
+dof_blur_near_enabled = true
+dof_blur_near_distance = 17.0
+dof_blur_near_transition = 5.0
+dof_blur_amount = 0.12
+
+[node name="Lisbon" type="Node3D"]
+script = ExtResource("root")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+camera_attributes = SubResource("cam_attr")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.6, 0.55, 0)
+light_color = Color(1, 0.88, 0.72, 1)
+light_energy = 1.3
+shadow_enabled = true
+light_volumetric_fog_energy = 1.5
+
+[node name="Camera3D" type="Camera3D" parent="."]
+fov = 30.0
+
+[node name="Spawn" type="Marker3D" parent="."]
+position = Vector3(0, 0.1, -6)
+
+[node name="Departure" type="Area3D" parent="."]
+position = Vector3(10, 1, 10)
+
+[node name="Shape" type="CollisionShape3D" parent="Departure"]
+shape = SubResource("departure_shape")
+
+[node name="Geometry" type="Node3D" parent="."]
+
+[node name="Doors" type="Node3D" parent="."]
+
+[node name="Lights" type="Node3D" parent="."]
+
+[node name="Bounds" type="StaticBody3D" parent="."]
+
+[node name="Ground" type="CSGBox3D" parent="Geometry"]
+position = Vector3(0, -0.5, -4)
+use_collision = true
+size = Vector3(44, 1, 14)
+material = SubResource("m_stone")
+
+[node name="Terrace" type="CSGBox3D" parent="Geometry"]
+position = Vector3(0, 1.5, -24)
+use_collision = true
+size = Vector3(44, 5, 12)
+material = SubResource("m_stone")
+
+[node name="Stairs" type="CSGBox3D" parent="Geometry"]
+position = Vector3(0, 1.9, -14.5)
+rotation = Vector3(0.51915, 0, 0)
+use_collision = true
+size = Vector3(4, 0.4, 8.062)
+material = SubResource("m_stone")
+
+[node name="Market" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-17.5, 2.0, -13.0)
+use_collision = true
+size = Vector3(7, 4, 4)
+material = SubResource("m_plaster")
+
+[node name="MarketRoof" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-17.5, 4.25, -13.0)
+size = Vector3(7.6, 0.5, 4.6)
+material = SubResource("m_roof")
+
+[node name="MarketDoorFrame" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-17.5, 1.1, -10.95)
+size = Vector3(1.4, 2.2, 0.1)
+material = SubResource("m_door")
+
+[node name="MarketDoor" type="Area3D" parent="Doors"]
+position = Vector3(-17.5, 1, -10.5)
+script = ExtResource("door")
+slot = 0
+
+[node name="Shape" type="CollisionShape3D" parent="Doors/MarketDoor"]
+shape = SubResource("door_shape")
+
+[node name="Tavern" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-9.5, 2.25, -13.0)
+use_collision = true
+size = Vector3(7, 4.5, 4)
+material = SubResource("m_plaster2")
+
+[node name="TavernRoof" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-9.5, 4.75, -13.0)
+size = Vector3(7.6, 0.5, 4.6)
+material = SubResource("m_roof")
+
+[node name="TavernDoorFrame" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-9.5, 1.1, -10.95)
+size = Vector3(1.4, 2.2, 0.1)
+material = SubResource("m_door")
+
+[node name="TavernDoor" type="Area3D" parent="Doors"]
+position = Vector3(-9.5, 1, -10.5)
+script = ExtResource("door")
+slot = 1
+
+[node name="Shape" type="CollisionShape3D" parent="Doors/TavernDoor"]
+shape = SubResource("door_shape")
+
+[node name="Harbor" type="CSGBox3D" parent="Geometry"]
+position = Vector3(9.5, 2.0, -13.0)
+use_collision = true
+size = Vector3(7, 4, 4)
+material = SubResource("m_plaster2")
+
+[node name="HarborRoof" type="CSGBox3D" parent="Geometry"]
+position = Vector3(9.5, 4.25, -13.0)
+size = Vector3(7.6, 0.5, 4.6)
+material = SubResource("m_roof")
+
+[node name="HarborDoorFrame" type="CSGBox3D" parent="Geometry"]
+position = Vector3(9.5, 1.1, -10.95)
+size = Vector3(1.4, 2.2, 0.1)
+material = SubResource("m_door")
+
+[node name="HarborDoor" type="Area3D" parent="Doors"]
+position = Vector3(9.5, 1, -10.5)
+script = ExtResource("door")
+slot = 3
+
+[node name="Shape" type="CollisionShape3D" parent="Doors/HarborDoor"]
+shape = SubResource("door_shape")
+
+[node name="Shipyard" type="CSGBox3D" parent="Geometry"]
+position = Vector3(17.5, 2.25, -13.0)
+use_collision = true
+size = Vector3(7, 4.5, 4)
+material = SubResource("m_plaster")
+
+[node name="ShipyardRoof" type="CSGBox3D" parent="Geometry"]
+position = Vector3(17.5, 4.75, -13.0)
+size = Vector3(7.6, 0.5, 4.6)
+material = SubResource("m_roof")
+
+[node name="ShipyardDoorFrame" type="CSGBox3D" parent="Geometry"]
+position = Vector3(17.5, 1.1, -10.95)
+size = Vector3(1.4, 2.2, 0.1)
+material = SubResource("m_door")
+
+[node name="ShipyardDoor" type="Area3D" parent="Doors"]
+position = Vector3(17.5, 1, -10.5)
+script = ExtResource("door")
+slot = 2
+
+[node name="Shape" type="CollisionShape3D" parent="Doors/ShipyardDoor"]
+shape = SubResource("door_shape")
+
+[node name="Church" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-14, 7.5, -26.5)
+use_collision = true
+size = Vector3(8, 7, 5)
+material = SubResource("m_plaster2")
+
+[node name="ChurchRoof" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-14, 11.25, -26.5)
+size = Vector3(8.6, 0.5, 5.6)
+material = SubResource("m_roof")
+
+[node name="ChurchDoorFrame" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-14, 5.1, -23.95)
+size = Vector3(1.4, 2.2, 0.1)
+material = SubResource("m_door")
+
+[node name="ChurchDoor" type="Area3D" parent="Doors"]
+position = Vector3(-14, 5, -23.5)
+script = ExtResource("door")
+slot = 10
+
+[node name="Shape" type="CollisionShape3D" parent="Doors/ChurchDoor"]
+shape = SubResource("door_shape")
+
+[node name="Palace" type="CSGBox3D" parent="Geometry"]
+position = Vector3(0, 8.0, -27.0)
+use_collision = true
+size = Vector3(14, 8, 6)
+material = SubResource("m_plaster")
+
+[node name="PalaceRoof" type="CSGBox3D" parent="Geometry"]
+position = Vector3(0, 12.25, -27.0)
+size = Vector3(14.6, 0.5, 6.6)
+material = SubResource("m_roof")
+
+[node name="PalaceDoorFrame" type="CSGBox3D" parent="Geometry"]
+position = Vector3(0, 5.1, -23.95)
+size = Vector3(1.4, 2.2, 0.1)
+material = SubResource("m_door")
+
+[node name="PalaceDoor" type="Area3D" parent="Doors"]
+position = Vector3(0, 5, -23.5)
+script = ExtResource("door")
+slot = 5
+
+[node name="Shape" type="CollisionShape3D" parent="Doors/PalaceDoor"]
+shape = SubResource("door_shape")
+
+[node name="Guild" type="CSGBox3D" parent="Geometry"]
+position = Vector3(14, 7.0, -26.5)
+use_collision = true
+size = Vector3(8, 6, 5)
+material = SubResource("m_plaster2")
+
+[node name="GuildRoof" type="CSGBox3D" parent="Geometry"]
+position = Vector3(14, 10.25, -26.5)
+size = Vector3(8.6, 0.5, 5.6)
+material = SubResource("m_roof")
+
+[node name="GuildDoorFrame" type="CSGBox3D" parent="Geometry"]
+position = Vector3(14, 5.1, -23.95)
+size = Vector3(1.4, 2.2, 0.1)
+material = SubResource("m_door")
+
+[node name="GuildDoor" type="Area3D" parent="Doors"]
+position = Vector3(14, 5, -23.5)
+script = ExtResource("door")
+slot = 6
+
+[node name="Shape" type="CollisionShape3D" parent="Doors/GuildDoor"]
+shape = SubResource("door_shape")
+
+[node name="ChurchTower" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-14, 14, -27)
+use_collision = true
+size = Vector3(3, 6, 3)
+material = SubResource("m_plaster2")
+
+[node name="Pier0" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-12, -0.2, 7)
+use_collision = true
+size = Vector3(2, 0.4, 8)
+material = SubResource("m_wood")
+
+[node name="Hull0" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-15.5, -0.2, 7.5)
+size = Vector3(3, 1.6, 7)
+material = SubResource("m_wood")
+
+[node name="Mast0" type="CSGCylinder3D" parent="Geometry"]
+position = Vector3(-15.5, 3.5, 7.5)
+radius = 0.12
+height = 7
+material = SubResource("m_wood")
+
+[node name="Sail0" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-15.5, 4.2, 7.5)
+size = Vector3(0.1, 3.5, 4)
+material = SubResource("m_sail")
+
+[node name="Pier1" type="CSGBox3D" parent="Geometry"]
+position = Vector3(10, -0.2, 7)
+use_collision = true
+size = Vector3(2, 0.4, 8)
+material = SubResource("m_wood")
+
+[node name="Hull1" type="CSGBox3D" parent="Geometry"]
+position = Vector3(13.5, -0.2, 7.5)
+size = Vector3(3, 1.6, 7)
+material = SubResource("m_wood")
+
+[node name="Mast1" type="CSGCylinder3D" parent="Geometry"]
+position = Vector3(13.5, 3.5, 7.5)
+radius = 0.12
+height = 7
+material = SubResource("m_wood")
+
+[node name="Sail1" type="CSGBox3D" parent="Geometry"]
+position = Vector3(13.5, 4.2, 7.5)
+size = Vector3(0.1, 3.5, 4)
+material = SubResource("m_sail")
+
+[node name="Sea" type="CSGBox3D" parent="Geometry"]
+position = Vector3(0, -0.7, 23)
+size = Vector3(120, 0.2, 40)
+material = SubResource("m_water")
+
+[node name="Hills" type="CSGBox3D" parent="Geometry"]
+position = Vector3(0, 5, -48)
+size = Vector3(140, 18, 10)
+material = SubResource("m_hill")
+
+[node name="Crate0" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-6, 0.4, 2.2)
+use_collision = true
+size = Vector3(0.8, 0.8, 0.8)
+material = SubResource("m_wood")
+
+[node name="Crate1" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-5.1, 0.4, 2.5)
+use_collision = true
+size = Vector3(0.8, 0.8, 0.8)
+material = SubResource("m_wood")
+
+[node name="Crate2" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-5.6, 0.4, 1.6)
+use_collision = true
+size = Vector3(0.8, 0.8, 0.8)
+material = SubResource("m_wood")
+
+[node name="Barrel0" type="CSGCylinder3D" parent="Geometry"]
+position = Vector3(5, 0.45, 2.3)
+use_collision = true
+radius = 0.35
+height = 0.9
+material = SubResource("m_wood")
+
+[node name="Barrel1" type="CSGCylinder3D" parent="Geometry"]
+position = Vector3(5.8, 0.45, 2.0)
+use_collision = true
+radius = 0.35
+height = 0.9
+material = SubResource("m_wood")
+
+[node name="Curb0" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-17.5, 0.15, 2.9)
+size = Vector3(9, 0.3, 0.4)
+material = SubResource("m_stone")
+
+[node name="Curb1" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-1, 0.15, 2.9)
+size = Vector3(20, 0.3, 0.4)
+material = SubResource("m_stone")
+
+[node name="Curb2" type="CSGBox3D" parent="Geometry"]
+position = Vector3(16.5, 0.15, 2.9)
+size = Vector3(11, 0.3, 0.4)
+material = SubResource("m_stone")
+
+[node name="LampPost0" type="CSGCylinder3D" parent="Geometry"]
+position = Vector3(-4, 1.3, -10)
+radius = 0.08
+height = 2.6
+material = SubResource("m_wood")
+
+[node name="LampGlow0" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-4, 2.7, -10)
+size = Vector3(0.3, 0.3, 0.3)
+material = SubResource("m_lamp")
+
+[node name="Lamp0" type="OmniLight3D" parent="Lights"]
+position = Vector3(-4, 2.7, -10)
+light_color = Color(1, 0.72, 0.4, 1)
+light_energy = 2.0
+omni_range = 6.0
+
+[node name="LampPost1" type="CSGCylinder3D" parent="Geometry"]
+position = Vector3(4, 1.3, -10)
+radius = 0.08
+height = 2.6
+material = SubResource("m_wood")
+
+[node name="LampGlow1" type="CSGBox3D" parent="Geometry"]
+position = Vector3(4, 2.7, -10)
+size = Vector3(0.3, 0.3, 0.3)
+material = SubResource("m_lamp")
+
+[node name="Lamp1" type="OmniLight3D" parent="Lights"]
+position = Vector3(4, 2.7, -10)
+light_color = Color(1, 0.72, 0.4, 1)
+light_energy = 2.0
+omni_range = 6.0
+
+[node name="LampPost2" type="CSGCylinder3D" parent="Geometry"]
+position = Vector3(-3, 5.3, -22)
+radius = 0.08
+height = 2.6
+material = SubResource("m_wood")
+
+[node name="LampGlow2" type="CSGBox3D" parent="Geometry"]
+position = Vector3(-3, 6.7, -22)
+size = Vector3(0.3, 0.3, 0.3)
+material = SubResource("m_lamp")
+
+[node name="Lamp2" type="OmniLight3D" parent="Lights"]
+position = Vector3(-3, 6.7, -22)
+light_color = Color(1, 0.72, 0.4, 1)
+light_energy = 2.0
+omni_range = 6.0
+
+[node name="LampPost3" type="CSGCylinder3D" parent="Geometry"]
+position = Vector3(3, 5.3, -22)
+radius = 0.08
+height = 2.6
+material = SubResource("m_wood")
+
+[node name="LampGlow3" type="CSGBox3D" parent="Geometry"]
+position = Vector3(3, 6.7, -22)
+size = Vector3(0.3, 0.3, 0.3)
+material = SubResource("m_lamp")
+
+[node name="Lamp3" type="OmniLight3D" parent="Lights"]
+position = Vector3(3, 6.7, -22)
+light_color = Color(1, 0.72, 0.4, 1)
+light_energy = 2.0
+omni_range = 6.0
+
+[node name="Wall0" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(-22.5, 2, -10)
+shape = SubResource("wall0")
+
+[node name="Wall1" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(22.5, 2, -10)
+shape = SubResource("wall1")
+
+[node name="Wall2" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(0, 6, -30.5)
+shape = SubResource("wall2")
+
+[node name="Wall3" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(-17.5, 1, 3.25)
+shape = SubResource("wall3")
+
+[node name="Wall4" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(-1, 1, 3.25)
+shape = SubResource("wall4")
+
+[node name="Wall5" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(16.5, 1, 3.25)
+shape = SubResource("wall5")
+
+[node name="Wall6" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(-13.25, 1, 7)
+shape = SubResource("wall6")
+
+[node name="Wall7" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(-10.75, 1, 7)
+shape = SubResource("wall7")
+
+[node name="Wall8" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(-12, 1, 11.25)
+shape = SubResource("wall8")
+
+[node name="Wall9" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(8.75, 1, 7)
+shape = SubResource("wall9")
+
+[node name="Wall10" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(11.25, 1, 7)
+shape = SubResource("wall10")
+
+[node name="Wall11" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(10, 1, 11.25)
+shape = SubResource("wall11")

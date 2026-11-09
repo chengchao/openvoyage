@@ -1,0 +1,47 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="OpenVoyage"
+config/description="OpenVoyage：大航海题材游戏的 Godot 开源引擎（需玩家自备原版数据）。"
+run/main_scene="res://game/main.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+config/icon="res://icon.svg"
+
+[debug]
+
+gdscript/warnings/untyped_declaration=1
+
+[display]
+
+; 像素美术基准分辨率：原版 640×400（VGA mode 12h 工作区）。港口取景=居中 384×384(24×24 图块)
+; 视口，两侧 HUD 面板（左 88px 日期/User Data，右 168px 商业值/菜单/罗盘），实测自原版截图。
+; viewport 拉伸 + 整数缩放 + 最近邻过滤 = 像素清晰、放大不糊。
+window/size/viewport_width=640
+window/size/viewport_height=400
+window/size/window_width_override=1280
+window/size/window_height_override=800
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
+window/stretch/scale_mode="integer"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/gut/plugin.cfg")
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+textures/canvas_textures/default_texture_filter=0
+; 像素对齐：相机/补间会让精灵落在半像素上，字模/主角(图满 16px 无边距)边列会被裁掉。
+; 渲染前吸附到整数像素，消除边缘截断与抖动。
+2d/snap/snap_2d_transforms_to_pixel=true
+2d/snap/snap_2d_vertices_to_pixel=true

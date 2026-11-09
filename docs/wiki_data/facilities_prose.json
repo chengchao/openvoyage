@@ -1,0 +1,18 @@
+{
+  "_doc": "玩家向设施文案（人工撰写，非原版解码数据）。键=facilities.json 的 facility key。由 tools/gen_wiki.py 与 facilities.json(名称/顺序) + facility_actions.json(菜单项) 合并渲染进 docs/wiki.html 的单一设施表。与 facilities.json 分开存放：那是原版事实，本文件是我方撰写的导读文案。",
+  "_fields": "sign=招牌图案的中文说法(导读用，非 sign_tile 数字); blurb=能做什么的玩家向描述; seal=类别标签; seal_class=徽记配色 seal-gold|seal-blue|seal-red|seal-plain。",
+  "prose": {
+    "market":         { "sign": "天平秤",   "blurb": "买卖贸易品。每港物价不同，特产便宜、舶来品昂贵——低买高卖正是发家之本。", "seal": "贸易", "seal_class": "seal-gold" },
+    "tavern":         { "sign": "酒杯",     "blurb": "雇佣水手、招募航海士伙伴、向老板和客人打探传闻情报；也是剧情邂逅的高发地。", "seal": "人脉", "seal_class": "seal-blue" },
+    "shipyard":       { "sign": "船锚",     "blurb": "购买新船、出售旧船、改造船只（炮门、船仓、船首像），打造你的旗舰与船队。", "seal": "船务", "seal_class": "seal-blue" },
+    "harbor":         { "sign": "旗帜",     "blurb": "办理出入港手续、补给查询等港口公务；远航前别忘了来一趟。", "seal": "船务", "seal_class": "seal-blue" },
+    "inn":            { "sign": "床铺",     "blurb": "休息恢复体力、留宿过夜；不少剧情人物也会在此等你。", "seal": "休整", "seal_class": "seal-plain" },
+    "palace":         { "sign": "王冠",     "blurb": "谒见国王或公爵，领受敕命任务，凭功勋获赐爵位与封赏——出人头地之路。", "seal": "功名", "seal_class": "seal-red" },
+    "guild":          { "sign": "纹章盾",   "blurb": "承接委托工作：护航、讨伐、运送……完成可得报酬与名声，缺钱时的可靠营生。", "seal": "功名", "seal_class": "seal-red" },
+    "armory":         { "sign": "刀剑",     "blurb": "购置剑与铠甲。决斗时的胜负，一半在剑术，一半在你腰间的装备。", "seal": "武备", "seal_class": "seal-red" },
+    "bank":           { "sign": "金器",     "blurb": "存款、提款。金币随船沉没就血本无归——大宗财产务必存进银行。", "seal": "贸易", "seal_class": "seal-gold" },
+    "item_shop":      { "sign": "柱状卷轴", "blurb": "买进、卖出各类道具：望远镜、海图、奇珍异宝……冒险路上的百宝箱。", "seal": "补给", "seal_class": "seal-gold" },
+    "church":         { "sign": "十字架",   "blurb": "祈祷与捐献，安抚船员之心；某些誓约与剧情也在神前完成。", "seal": "休整", "seal_class": "seal-plain" },
+    "fortune_teller": { "sign": "水晶帐幕", "blurb": "占卜吉凶，获得下一步剧情与宝藏所在的暗示——迷航时来此问路。", "seal": "情报", "seal_class": "seal-plain" }
+  }
+}

@@ -1,0 +1,91 @@
+{
+ "pack": "placeholder-v0",
+ "version": "0",
+ "note": "M0/M2 占位资产包：自制、无版权，供 CI 冒烟与资料查看器跑通全流程。",
+ "images": [
+  {
+   "id": "portrait_00",
+   "kind": "portrait",
+   "file": "images/portrait_00.png",
+   "w": 48,
+   "h": 80
+  },
+  {
+   "id": "portrait_01",
+   "kind": "portrait",
+   "file": "images/portrait_01.png",
+   "w": 48,
+   "h": 80
+  },
+  {
+   "id": "portrait_02",
+   "kind": "portrait",
+   "file": "images/portrait_02.png",
+   "w": 48,
+   "h": 80
+  },
+  {
+   "id": "portrait_03",
+   "kind": "portrait",
+   "file": "images/portrait_03.png",
+   "w": 48,
+   "h": 80
+  },
+  {
+   "id": "portrait_04",
+   "kind": "portrait",
+   "file": "images/portrait_04.png",
+   "w": 48,
+   "h": 80
+  },
+  {
+   "id": "portrait_05",
+   "kind": "portrait",
+   "file": "images/portrait_05.png",
+   "w": 48,
+   "h": 80
+  },
+  {
+   "id": "tile_00",
+   "kind": "tile",
+   "file": "images/tile_00.png",
+   "w": 16,
+   "h": 16
+  },
+  {
+   "id": "tile_01",
+   "kind": "tile",
+   "file": "images/tile_01.png",
+   "w": 16,
+   "h": 16
+  },
+  {
+   "id": "tile_02",
+   "kind": "tile",
+   "file": "images/tile_02.png",
+   "w": 16,
+   "h": 16
+  },
+  {
+   "id": "tile_03",
+   "kind": "tile",
+   "file": "images/tile_03.png",
+   "w": 16,
+   "h": 16
+  },
+  {
+   "id": "tile_04",
+   "kind": "tile",
+   "file": "images/tile_04.png",
+   "w": 16,
+   "h": 16
+  },
+  {
+   "id": "tile_05",
+   "kind": "tile",
+   "file": "images/tile_05.png",
+   "w": 16,
+   "h": 16
+  }
+ ]
+}

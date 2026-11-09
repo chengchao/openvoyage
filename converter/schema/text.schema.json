@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "koukai2/text.schema.json",
+  "title": "Dialogue text store (one file per scenario)",
+  "description": "Stable id -> string. Variables are kept as $-placeholders and substituted at render time from GameState. This file is the localization seam: feed it into Godot's CSV/PO translation pipeline.",
+  "type": "object",
+  "patternProperties": {
+    "^snr[0-6]/[0-9]+$": {
+      "type": "string",
+      "description": "Decoded line. May contain control/variable placeholders: \\n = newline; $n player name; $s dynamic name; $rNN port/region ref; $dNN number slot."
+    }
+  },
+  "additionalProperties": false
+}

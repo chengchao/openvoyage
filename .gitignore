@@ -1,0 +1,23 @@
+# 原版资产与转换产物（衍生品）—— 一律不入库
+assets-converted/
+docs/assets-converted
+gamedata
+gamedata/
+*.LZW
+*.lzw
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Godot
+godot/.godot/
+godot/export/
+
+# OS
+.DS_Store
+
+# wiki 店主台词产物（含原版 MESSAGE.DAT 解码文本，依法律边界不入库）
+docs/wiki_data/_dialogue.local.js

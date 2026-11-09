@@ -1,0 +1,129 @@
+{
+  "_doc": "设施菜单项 → 行为原语 的表驱动映射（人工维护，repo 内）。只记录原版事实：槽位→设施→menu_index 在 facilities.json；本表只管「某设施的第 item 个菜单项调用哪个原语」。不含我方实现进度（是否已写代码、归属里程碑、被什么卡住）——那是工程状态，非原版真相，分别归 FacilityActions 解释器（已实现=代码里有该 action 的分支）与 koukai2-godot-plan.md（里程碑/待办）。",
+  "_fields": "actions=原语目录（受控词表）：每个原语的契约——kind=分类(供 wiki 分组), needs=原版会向玩家索取的输入(如 amount/qty), desc=英文一句话。不含 status/milestone/blocked_on（见 _doc）。facilities[key]=该设施菜单项数组：item=组内 0-based 序号(与 menu_selected 的 index 一致), label=解码标签(去全角空格), action=actions 中的原语名, params=原语参数(可选)。",
+  "_label_note": "label_sha256 = 去空格后菜单项原文的 SHA-256；原文不入库，由 test_facility_actions.py 对玩家本地 MENU.DAT 逐项比对（skip-if-missing）。",
+  "_exit_note": "各设施菜单末项『離開』为通用退出，由 FacilityScene 处理（item = 组长度），不在本表内。",
+
+  "actions": {
+    "deposit":         { "kind": "money",      "needs": ["amount"], "desc": "Move cash on hand into bank deposit." },
+    "withdraw":        { "kind": "money",      "needs": ["amount"], "desc": "Move bank deposit back to cash on hand." },
+    "loan":            { "kind": "money",      "needs": ["amount"], "desc": "Borrow money; incurs debt." },
+    "repay":           { "kind": "money",      "needs": ["amount"], "desc": "Repay outstanding debt." },
+
+    "buy_goods":       { "kind": "trade",      "needs": ["good", "qty"], "desc": "Buy trade goods at market price." },
+    "sell_goods":      { "kind": "trade",      "needs": ["good", "qty"], "desc": "Sell trade goods at market price." },
+    "invest_market":   { "kind": "trade",      "needs": ["amount"], "desc": "Invest in the market to raise prices/share." },
+    "show_prices":     { "kind": "info",       "desc": "Read-only: list current commodity prices." },
+
+    "buy_item":        { "kind": "trade",      "needs": ["item"], "desc": "Buy a consumable/trade item." },
+    "sell_item":       { "kind": "trade",      "needs": ["item"], "desc": "Sell a held item." },
+
+    "set_sail":        { "kind": "navigation", "desc": "Leave port for the open sea (world map)." },
+    "resupply":        { "kind": "navigation", "needs": ["amount"], "desc": "Buy water/food before sailing." },
+    "dry_dock":        { "kind": "ship",       "desc": "Store/retrieve ships in the dock." },
+
+    "build_ship":      { "kind": "ship",       "needs": ["ship_type"], "desc": "Order a new ship." },
+    "buy_used_ship":   { "kind": "ship",       "desc": "Buy a second-hand ship." },
+    "repair_ship":     { "kind": "ship",       "desc": "Repair hull/sails." },
+    "sell_ship":       { "kind": "ship",       "desc": "Sell a ship from the fleet." },
+    "refit_ship":      { "kind": "ship",       "desc": "Refit guns/cargo/cabins." },
+    "invest_industry": { "kind": "trade",      "needs": ["amount"], "desc": "Invest in local shipbuilding industry." },
+
+    "hire_sailor":     { "kind": "crew",       "needs": ["count"], "desc": "Recruit sailors." },
+    "dismiss_sailor":  { "kind": "crew",       "needs": ["count"], "desc": "Discharge sailors." },
+
+    "sleep":           { "kind": "service",    "desc": "Rest to advance the calendar / recover." },
+    "donate":          { "kind": "service",    "needs": ["amount"], "desc": "Donate gold (devotion / reputation sink)." },
+    "worship":         { "kind": "service",    "desc": "Pray (status / fatigue effect TBD)." },
+    "gamble":          { "kind": "minigame",   "needs": ["amount"], "desc": "Bet gold in a tavern game." },
+
+    "store_equipment": { "kind": "service",    "desc": "Deposit personal equipment." },
+    "equip":           { "kind": "service",    "desc": "Equip weapon/armor for duels." },
+    "exchange_equipment": { "kind": "service", "desc": "Trade in equipment." },
+
+    "chat_navigator":  { "kind": "info",       "desc": "Chat with other navigators (rumors/quests)." },
+    "port_support":    { "kind": "info",       "desc": "View this port's support level for you." },
+    "nation_info":     { "kind": "info",       "desc": "Read intelligence on the nations." },
+    "job_listing":     { "kind": "info",       "desc": "Browse guild job offers." },
+    "drink_talk":      { "kind": "info",       "desc": "Drink and gather rumors." },
+    "bar_girl":        { "kind": "info",       "desc": "Talk to the bar hostess." },
+    "fortune":         { "kind": "info",       "needs": ["topic"], "desc": "Fortune-telling reading on a topic." },
+
+    "audience_king":     { "kind": "story",    "desc": "Seek an audience with the king." },
+    "apply_nationality": { "kind": "story",    "desc": "Apply for citizenship of this nation." },
+    "request_funds":     { "kind": "story",    "desc": "Request funding from the crown." },
+    "request_ship":      { "kind": "story",    "desc": "Request a ship from the crown." },
+    "secret_meeting":    { "kind": "story",    "desc": "Attend a private/secret meeting." }
+  },
+
+  "facilities": {
+    "bank": [
+      { "item": 0, "label_sha256": "759472586f5c20b57308e720abf013ab0a9874ac7540ab0ac3d8dac408584511", "action": "deposit" },
+      { "item": 1, "label_sha256": "8525c4925e7ace019c23d036617f1357764d9f9e842d68786141ecd54a16a380", "action": "withdraw" },
+      { "item": 2, "label_sha256": "f8c8473642040cf84eeea2761d01238c702b3d0366547744f989beaaee1a2bf5", "action": "loan" },
+      { "item": 3, "label_sha256": "ea64c6c8d00a0efd39865e008d02b5a7bfc7fd55c4300057f700dc4e67a24b54", "action": "repay" }
+    ],
+    "guild": [
+      { "item": 0, "label_sha256": "c48e2e4ee8a6f20d59b73aaa320b11885e5a17362b3d336b74b8111035bb3a1d", "action": "job_listing" },
+      { "item": 1, "label_sha256": "409b70ea8e1b8a1dee8772e1dea9f56c980156f1d9ac330c1c1ee2a711562939", "action": "nation_info" }
+    ],
+    "inn": [
+      { "item": 0, "label_sha256": "bda0ddbb1d5376d9ffcbfce7f4b45bcf3b5d98c30e953ac2065d2aaf35807742", "action": "chat_navigator" },
+      { "item": 1, "label_sha256": "55a5050568b171bb68f820cd6e01c7504d60f0474b70ff981b466d27097c257e", "action": "port_support" },
+      { "item": 2, "label_sha256": "6edef1feba2178a35aa15fbda03c4724172780544bff6b5131ad67b9a296697b", "action": "sleep" }
+    ],
+    "item_shop": [
+      { "item": 0, "label_sha256": "3720ce1a1dcfff34e63594cc15b01b1c95f98b667ebda875c9303e1fe5cd1663", "action": "buy_item" },
+      { "item": 1, "label_sha256": "eb37a03e1f2a1832827720d5bfdfdee1ec2dfcacc906a635e6f2f329e965cc1e", "action": "sell_item" }
+    ],
+    "market": [
+      { "item": 0, "label_sha256": "3720ce1a1dcfff34e63594cc15b01b1c95f98b667ebda875c9303e1fe5cd1663", "action": "buy_goods" },
+      { "item": 1, "label_sha256": "eb37a03e1f2a1832827720d5bfdfdee1ec2dfcacc906a635e6f2f329e965cc1e", "action": "sell_goods" },
+      { "item": 2, "label_sha256": "c927da3e98b8a834b81d9e4695f5b509de4200c5de68e64c1ac86291fe4c5b86", "action": "invest_market" },
+      { "item": 3, "label_sha256": "cb2c295e7a4b2053586c33affda54b5001d418fcba64873135805dfccd8126ae", "action": "show_prices" }
+    ],
+    "church": [
+      { "item": 0, "label_sha256": "1d3473614976f1ddce771b4b172c56f9cdbd38f2f1bfa86482abc03c0eeed389", "action": "worship" },
+      { "item": 1, "label_sha256": "45235cf6eeb0cc9eff642dfafffcaad5bf47a1c1df74f521e774431ea7237098", "action": "donate" }
+    ],
+    "armory": [
+      { "item": 0, "label_sha256": "ab80791567a407da8e20b3d554d424660b6eee1557c3a19c72f039b46266458d", "action": "store_equipment" },
+      { "item": 1, "label_sha256": "63f77a635db07273b46631477a85846a15b37cdbbb19f32720a6a8bc373712fb", "action": "equip" },
+      { "item": 2, "label_sha256": "c0be6499c92ec64e88ccf3a935d5078bf17e1071a26a905dfc6542b51912464f", "action": "exchange_equipment" }
+    ],
+    "harbor": [
+      { "item": 0, "label_sha256": "86bfae74159bf9a338d76e41eb3f387b98992e46150714c43ea3a3e5d6426991", "action": "set_sail" },
+      { "item": 1, "label_sha256": "8d83c4ab5baddd5596e73e41bc2e5c0db0867c3cb7b758bf7572f02ed374d704", "action": "resupply" },
+      { "item": 2, "label_sha256": "7743b4a035d4e43b2758d87ac72d6be35c9a1316a158087a4c5a1e78f7b15698", "action": "dry_dock" }
+    ],
+    "tavern": [
+      { "item": 0, "label_sha256": "d9001559872b858e182d67cdae59dca1270d1287b9de4bcb6541fcd380fdc937", "action": "hire_sailor" },
+      { "item": 1, "label_sha256": "b072f062b7894a5af1d068e17ec39cbea162e4b447361fcc80f12c1d1d3b81d3", "action": "dismiss_sailor" },
+      { "item": 2, "label_sha256": "4282f6b486e23ad4429b6108077a446caba21ee84885ccd3be324c3a3a0c152f", "action": "drink_talk" },
+      { "item": 3, "label_sha256": "bda0ddbb1d5376d9ffcbfce7f4b45bcf3b5d98c30e953ac2065d2aaf35807742", "action": "chat_navigator" },
+      { "item": 4, "label_sha256": "cdf8b88004b418127fd33af945795094584581fea8162721d79223e64e35c806", "action": "bar_girl" },
+      { "item": 5, "label_sha256": "fbc7afb3cab15e2fbaccef93874e6414cd44783a51ae560d713aca7c4277fd7b", "action": "gamble" }
+    ],
+    "palace": [
+      { "item": 0, "label_sha256": "9b2afdc9c74b808d79247f2c38619b77cc00a660cb752ac6363079002332adf0", "action": "audience_king" },
+      { "item": 1, "label_sha256": "a82108121bafe3ba80546ab98abcd79c30e1c2de92c23d76f78c6e44fdda9131", "action": "apply_nationality" },
+      { "item": 2, "label_sha256": "2358e3e9984fd4429fe57a5fd06c0d77a46cb9f0db1f9cb5095521394ff8cc4e", "action": "request_funds" },
+      { "item": 3, "label_sha256": "d1724bad85615ec780e83af992acfbe781b628a010e0633d004a6608c701d7fd", "action": "request_ship" },
+      { "item": 4, "label_sha256": "cfaf0b89a1c14f18e53239555a5deb7a6883c2e5193190acf424c29c127a9aa7", "action": "secret_meeting" }
+    ],
+    "fortune_teller": [
+      { "item": 0, "label_sha256": "118a06bba63ee1c226cdcb5e7ef7e045444757faaa087f37b0218383d7b8e751", "action": "fortune", "params": { "topic": "life" } },
+      { "item": 1, "label_sha256": "00c232c0266b7ab0ae10bb5c1e3b06f089b91fc8dc2d382009ae28afd312f39e", "action": "fortune", "params": { "topic": "career" } },
+      { "item": 2, "label_sha256": "e30dd94de31e35bfce8c0214c3b94d2184a86e1137190dcb565136fa4b3520d5", "action": "fortune", "params": { "topic": "love" } },
+      { "item": 3, "label_sha256": "9fd01daf9d7101690a4f6d0bd0cd32b802ec183c976e7fbdea20dbeacc713c17", "action": "fortune", "params": { "topic": "friend" } }
+    ],
+    "shipyard": [
+      { "item": 0, "label_sha256": "f9abb6adb0521d3353f6db35c8173cba1d39b8ef1a8573b51a4542d3936f4533", "action": "build_ship" },
+      { "item": 1, "label_sha256": "ae78b8f937b51156d5ab7cf30217e2e9653f157b91a62f71c9b9d9f38dbc33c1", "action": "buy_used_ship" },
+      { "item": 2, "label_sha256": "a0b0db2e55b8efc7299f6050b004b463a6cd8d7233ccd692ba7609bc75922232", "action": "repair_ship" },
+      { "item": 3, "label_sha256": "7895069047dfa288445c94157419baa393054f82f15ce51bf605c925434119bd", "action": "sell_ship" },
+      { "item": 4, "label_sha256": "04d8b58553e0b8f3bbfec448e7c7474104e827423b1abd41ef957817bfede666", "action": "refit_ship" },
+      { "item": 5, "label_sha256": "2772d4e316ec8850ac0f71787d053de87e26248caaf50a305b457053c06683bf", "action": "invest_industry" }
+    ]
+  }
+}
