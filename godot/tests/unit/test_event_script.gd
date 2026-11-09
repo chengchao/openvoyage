@@ -86,7 +86,7 @@ func test_load_missing_dir_is_empty_and_safe() -> void:
 # ----------------------------------------------------- 原版档层（skip-if-missing）--
 
 func _real_snr1() -> EventScript:
-	var dir := PortLoader.converted_dir()
+	var dir := TextDb.converted_dir()
 	var s := EventScript.load(dir, 1)
 	return s
 

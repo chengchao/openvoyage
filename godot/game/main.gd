@@ -4,9 +4,7 @@ extends Node
 
 const MENU_SCENE := preload("res://game/main_menu.tscn")
 const VIEWER_SCENE := preload("res://game/asset_viewer.tscn")
-const NEW_GAME_SCENE := "res://game/port_scene.tscn"
-## 启动参数 `-- --hd2d` 时开始游戏进 HD-2D 灰盒港口（feature flag，3D 港口接通设施后转正）。
-const HD2D_SCENE := "res://game/port3d/ports/lisbon.tscn"
+const NEW_GAME_SCENE := "res://game/port3d/ports/lisbon.tscn"
 
 var _current: Node = null
 
@@ -40,8 +38,7 @@ func _swap(node: Node) -> void:
 
 
 func _on_start_requested() -> void:
-	var hd2d := OS.get_cmdline_user_args().has("--hd2d")
-	get_tree().change_scene_to_file(HD2D_SCENE if hd2d else NEW_GAME_SCENE)
+	get_tree().change_scene_to_file(NEW_GAME_SCENE)
 
 
 func _on_quit_requested() -> void:

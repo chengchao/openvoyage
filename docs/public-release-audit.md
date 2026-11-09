@@ -11,7 +11,7 @@
 - [x] §4 改名 OpenVoyage：工程名、标题画面、README（含非关联与商标说明）、CLAUDE/AGENTS、计划文档、converter 描述。
   对原作的事实性提及（逆向文档、兼容说明、wiki 主题）保留。内部标识 `koukai2`（Python 包名、`docs/koukai2-docs/`）未改，公开仓库名用 `openvoyage`
 - [x] `docs/wiki.html` 主角卡片：保留（名字与身份是事实，简介是自写；用户决定 2026-11-08）
-- [ ] 已知遗留：2D 港口 HUD 标签（`port_scene.gd` 的商業價值等）仿原版界面，随 2D 港口删除一并消失
+- [x] 2D 港口 HUD 标签（`port_scene.gd` 的商業價值等）仿原版界面：已随 2D 港口删除（2026-11-09）
 - [ ] §6 新建公开仓库，放清理后的快照
 
 ## 结论

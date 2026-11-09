@@ -33,8 +33,8 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
 - 原版游戏文件和**转换产物**（衍生品）一律不进 repo：原版档在 `~/Documents/Claude/Projects/sea/KOUKAI2/`（只读参照），转换产物写到 `assets-converted/`（已 gitignore）。
 - CI 与冒烟测试使用 `placeholder/` 自制占位资产。
 - **美术方针（2026-11-07 更正）：游戏不用原版美术**——港口图块/建筑、人物走路精灵、店主画、对话头像一律自制
-  （当前为程序员美术：`godot/data/placeholder/` + 港图按图块种类上色）；港口版图也自制（`godot/data/ports/port_NNN.txt`，
-  文本版图：`.`街 `=`码头 `~`海 `#`墙 `@`出生 `0-9ab`=设施门槽号），不用 PORTMAP/ZA_DAT 坐标。
+  （当前为程序员美术：`godot/data/placeholder/` + 灰盒 3D 港口）；港口版图也自制（手工摆放的 3D 场景
+  `godot/game/port3d/ports/*.tscn`），不用 PORTMAP/ZA_DAT 坐标。
   converter 已删除 KAO/PORTCHIP/PORTMAP/CHAR/GRAPH.DAT/IAP 图像提取；仍转换文本、剧本、字库与数据表。
 - 依赖原版档的测试标记 skip-if-missing。
 
@@ -45,8 +45,8 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
 - [x] M1：转换管线 ①（LZW 全量校验、表格→JSON、SNR 普查报告）—— 仅 D2.MML 整表未吃透（前缀已解）
 - [x] M2：转换管线 ②（两种像素布局→PNG：KAO 256/PORTCHIP 7/IAP 875/PORTMAP 101；
   Godot 资料查看器 + 占位包 v1）——**图像提取部分已于 2026-11-07 删除**（美术方针更正，仅留字库）
-- [x] M3：港口场景 —— sim（港图/可通行/行走）+ 场景（自制文本港图 `PortLoader.parse_layout`、按图块种类上色、镜头）；
-  主角/角色子系统（Player + CharacterSprite，占位精灵按套号上色）已成
+- [x] M3：港口场景 —— 最初是 2D 网格港（文本港图 + GridWalker），**已于 2026-11-09 删除**，由下面的 HD-2D 港口取代；
+  留下 CharacterSprite（占位精灵按套号上色）
 - [~] M4：设施进入 —— 12 槽门（自制港图门字符）+ FacilityTable 触发（sim）+ 面门撞入 + 设施合成场景
   （占位店主画 + 菜单壳）+ 进出闭环；冒烟「走到门口→进入→见店主→退出」通过。
   槽位↔设施映射据招牌共现+实机进门验证（6/8/9 已逐门实证，其余 0/1/2/3/4/5/7/10/11 待逐门复核——旧「已证」字样不完全可靠）。
@@ -89,20 +89,19 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   把 (设施 key, 菜单项序号) 解析为行为原语名；PortSession.choose 按 action 名 match 分发——有分支=已实装、落 default=
   「尚未開放」占位（取代旧的按中文 label/ft.key 硬编码）。已实装 deposit/withdraw（银行存取，金额模态→PlayerState）；
   余原语随各里程碑加 match 分支即生效，菜单表无需改。待办：贷款/还款/交易/出航… = M6+ 各自里程碑连原语。
-- [~] HD-2D 港口（启动参数 `-- --hd2d` 开启；默认仍进 2D 网格港）：港口是手工摆放的 3D 场景
+- [~] HD-2D 港口（唯一的港口实现，开始游戏直接进入）：港口是手工摆放的 3D 场景
   `godot/game/port3d/ports/*.tscn`（当前灰盒里斯本，Forward+ 渲染，景深/泛光/SSAO/体积雾）。
   港口契约 = 根 `PortScene3D.port_id` + `Spawn` + `PortDoor`（slot 0..11 = SNR 事件键低字节，门位可变、槽号不可变）
   + `Departure`，由 test_port3d 逐港校验；站在门触发区内且朝门里（门节点 -Z）推方向键才进门。
   **玩法状态在 sim 层 `PortSession`**（WALKING/CUTSCENE/FACILITY_MENU/AMOUNT_ENTRY，转换只在合法模式生效；
-  剧情查找、存取款、金额上限都在这里）；`DoorFlow` 只按 mode 建/拆剧情、设施面板、金额输入，2D/3D 港口共用。
+  剧情查找、存取款、金额上限都在这里）；`DoorFlow` 只按 mode 建/拆剧情、设施面板、金额输入、游戏内选单。
   **agent 接口 `PortAgent`**：observe() 返回可序列化局面，act() 执行 walk/choose/leave/amount/cancel/next，headless 可玩。
   代码 lint 写在 `tests/unit/test_lint.gd`（随 GUT 跑；规则表：process-mode-disabled / full-rect-mouse-filter /
   gui-input-mouse-filter，违规须修或同行 `# lint-allow: <id>` 写明理由）。
   关卡几何 lint 写在 `tests/unit/test_lint_ports.gd`（每个 ports/*.tscn 从 Spawn 用主角胶囊洪泛：
   port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到）。
-  待办：3D 港口补 HUD + 港内 NPC → 转为默认 → 删 2D 网格（GridWalker/PortMap/TilePassability/NpcCrowd/port_*.txt）；
-  主角像素走路动画；Departure 接世界航海。
-- [~] 游戏内选单（港里按 ESC 开/关；2D/3D 港口共用 DoorFlow）：内容表驱动——`godot/data/game_menu.json`
+  待办：港内 NPC（旧 2D 的 NpcCrowd 已随网格港删除，需按 3D 重做）+ HUD；主角像素走路动画；Departure 接世界航海。
+- [~] 游戏内选单（港里按 ESC 开/关）：内容表驱动——`godot/data/game_menu.json`
   （分类 情報/艦隊/隨身物/系統 仿原版指令分组，标题与说明自撰）→ sim 层 `GameMenu`；`PortSession.Mode.GAME_MENU`
   （只能从 WALKING 开、开着时不能进门/走动）+ `menu_detail`；表现层 `GameMenuPanel`（页签/项目/详情三栏 + 资金顶栏，键鼠皆可）。
   agent：`menu` / `menu_select` / `close`，observe 带 `game_menu`。已实装 action：`status`（主角情報，详情栏显示港号与资金）、

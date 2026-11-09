@@ -101,7 +101,7 @@ func _sync() -> void:
 		director = DialogueDirector.new()
 		add_child(director)
 		director.finished.connect(_on_story_finished)
-		if not director.play(session.interp, PortLoader.converted_dir()):
+		if not director.play(session.interp, TextDb.converted_dir()):
 			_on_story_finished()  # 入口无可演内容 → 直接进设施
 			return
 	elif m != PortSession.Mode.CUTSCENE and director != null:
@@ -112,7 +112,7 @@ func _sync() -> void:
 	if in_facility and facility_scene == null:
 		facility_scene = FacilityScene.new()
 		facility_scene.layer = 5  # 盖在港口 HUD(layer 1) 之上
-		facility_scene.setup(FacilityType.of(session.slot), PortLoader.converted_dir())
+		facility_scene.setup(FacilityType.of(session.slot), TextDb.converted_dir())
 		facility_scene.exit_requested.connect(leave)
 		facility_scene.menu_selected.connect(func(index: int, _label: String) -> void: choose(index))
 		add_child(facility_scene)
