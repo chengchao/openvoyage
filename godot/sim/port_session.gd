@@ -1,9 +1,9 @@
-## 港口玩法状态机（纯逻辑）：在港里走 → 撞门（剧情优先，docs/09 §9.A）→ 设施菜单 ⇄ 金额输入 → 离开。
+## 港口玩法状态机（纯逻辑）：在港里走 → 撞门（剧情优先，docs/09 §9.A）→ 设施菜单 ⇄ 金额输入 → 离开；在港里走 ⇄ 游戏内选单。
 ## 不依赖场景树：表现层（DoorFlow）按 mode 渲染，agent 可直接驱动。转换只在合法 mode 下生效，否则返回 false/""。
 class_name PortSession
 extends RefCounted
 
-enum Mode { WALKING, CUTSCENE, FACILITY_MENU, AMOUNT_ENTRY }
+enum Mode { WALKING, CUTSCENE, FACILITY_MENU, AMOUNT_ENTRY, GAME_MENU }
 
 const STARTING_GOLD := 2000  # 开局现金（占位，待开场剧情/存档校准）
 const NOT_OPEN_YET := "（此功能尚未開放）"
@@ -87,6 +87,34 @@ func cancel_amount() -> bool:
 		return false
 	_end_amount()
 	return true
+
+
+func open_menu() -> bool:
+	if mode != Mode.WALKING:
+		return false
+	mode = Mode.GAME_MENU
+	return true
+
+
+func close_menu() -> bool:
+	if mode != Mode.GAME_MENU:
+		return false
+	mode = Mode.WALKING
+	return true
+
+
+## 选单详情栏的文字：该项说明；主角情報追加所在港与资金，尚未開放的项追加提示。越界返回 ""。
+func menu_detail(cat_index: int, item_index: int) -> String:
+	var rows := GameMenu.items(cat_index)
+	if item_index < 0 or item_index >= rows.size():
+		return ""
+	var text: String = rows[item_index].get("desc", "")
+	match GameMenu.action_of(cat_index, item_index):
+		&"status":
+			text += "\n港口 %d　%s" % [port_id, balance_line()]
+		&"":
+			text += "\n" + NOT_OPEN_YET
+	return text
 
 
 func balance_line() -> String:

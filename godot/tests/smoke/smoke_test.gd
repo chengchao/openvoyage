@@ -2,7 +2,7 @@
 ##
 ## M0：按工程配置启动 → 主菜单可达（开始/退出按钮存在且已接线）→ 无错退出(0)。
 ## M2：从主菜单进入资料查看器，能从占位包成功打开至少 10 项图片。
-## HD-2D：灰盒里斯本碰门进设施、退出。
+## HD-2D：灰盒里斯本碰门进设施、退出；ESC 开游戏内选单、移光标、关闭后照常走路。
 ## 运行：godot --headless --path godot -s tests/smoke/smoke_test.gd
 extends SceneTree
 
@@ -153,7 +153,42 @@ func _hd2d_door() -> bool:
 		push_error("HD-2D 港口未能退出设施")
 		return false
 	print("  HD-2D 港口：退出设施，回到港口")
+	if not await _hd2d_game_menu(port):
+		return false
 	port.queue_free()
+	return true
+
+
+## HD-2D 港口：ESC 开选单 → 移光标 → 选单开着走不动 → ESC 关 → 照常走路。
+func _hd2d_game_menu(port: PortScene3D) -> bool:
+	var agent := PortAgent.new(port)
+	var esc := InputEventAction.new()
+	esc.action = "ui_cancel"
+	esc.pressed = true
+	get_root().push_input(esc)
+	var obs := agent.observe()
+	if obs["mode"] != "game_menu":
+		push_error("ESC 未打开游戏内选单")
+		return false
+	if not await agent.act({"do": "menu_select", "category": 3, "item": 1}):
+		push_error("选单光标移不动")
+		return false
+	var menu: Dictionary = agent.observe()["game_menu"]
+	if menu["category"] != 3 or menu["item"] != 1 or menu["detail"] == "":
+		push_error("选单光标/详情有误：%s" % menu)
+		return false
+	if await agent.act({"do": "walk", "dir": "down", "seconds": 0.1}):
+		push_error("选单开着时仍能走路")
+		return false
+	get_root().push_input(esc)
+	var before: Array = agent.observe()["position"]
+	if not await agent.act({"do": "walk", "dir": "down", "seconds": 0.3}):
+		push_error("关闭选单后未回到走路")
+		return false
+	if agent.observe()["position"] == before:
+		push_error("关闭选单后主角走不动")
+		return false
+	print("  HD-2D 港口：ESC 开选单 → 『%s』 → ESC 关 → 继续走路" % menu["items"][menu["item"]])
 	return true
 
 

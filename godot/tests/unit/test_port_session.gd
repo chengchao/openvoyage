@@ -125,3 +125,45 @@ func test_transitions_from_the_wrong_mode_are_refused() -> void:
 	assert_false(s.enter_door(BANK), "设施里不能再进另一扇门")
 	assert_eq(s.slot, TAVERN)
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+
+
+func test_menu_opens_from_walking_and_closes_back() -> void:
+	var s := PortSession.new()
+	assert_true(s.open_menu())
+	assert_eq(s.mode, PortSession.Mode.GAME_MENU)
+	assert_false(s.open_menu(), "已开着")
+	assert_true(s.close_menu())
+	assert_eq(s.mode, PortSession.Mode.WALKING)
+
+
+func test_menu_is_refused_outside_walking() -> void:
+	var s := PortSession.new()
+	assert_false(s.close_menu(), "没开着选单")
+	s.enter_door(TAVERN)
+	assert_false(s.open_menu(), "设施里不开选单")
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+	assert_false(s.close_menu())
+
+
+func test_open_menu_blocks_port_actions() -> void:
+	var s := PortSession.new()
+	s.open_menu()
+	assert_false(s.enter_door(TAVERN), "选单开着不能进门")
+	assert_false(s.leave())
+	assert_eq(s.choose(0), "")
+	assert_eq(s.mode, PortSession.Mode.GAME_MENU)
+
+
+func test_menu_detail_for_status_shows_port_and_balance() -> void:
+	var s := PortSession.new(7)
+	var lines := s.menu_detail(0, 3).split("\n")
+	assert_eq(lines[0], GameMenu.items(0)[3]["desc"])
+	assert_string_contains(lines[-1], "7")
+	assert_string_contains(lines[-1], s.balance_line())
+
+
+func test_menu_detail_marks_unopened_items() -> void:
+	var s := PortSession.new()
+	assert_eq(s.menu_detail(1, 0), "%s\n%s" % [GameMenu.items(1)[0]["desc"], PortSession.NOT_OPEN_YET])
+	assert_eq(s.menu_detail(3, 3), GameMenu.items(3)[3]["desc"], "已开放的项只有说明")
+	assert_eq(s.menu_detail(0, 99), "")

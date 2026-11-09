@@ -75,3 +75,29 @@ func test_illegal_action_is_refused() -> void:
 	await wait_seconds(0.2)
 	assert_false(await agent.act({"do": "leave"}), "港口里不能离开设施")
 	assert_false(await agent.act({"do": "fly"}), "未知动作")
+
+
+func test_agent_opens_browses_and_closes_the_game_menu() -> void:
+	var agent := _agent()
+	await wait_seconds(0.2)
+	assert_false(agent.observe().has("game_menu"))
+	assert_false(await agent.act({"do": "close"}), "没开着选单")
+	assert_false(await agent.act({"do": "menu_select", "category": 0, "item": 0}))
+	assert_true(await agent.act({"do": "menu"}))
+	var obs := agent.observe()
+	assert_eq(obs["mode"], "game_menu")
+	assert_eq(obs["game_menu"]["categories"], ["情報", "艦隊", "隨身物", "系統"])
+	assert_eq([obs["game_menu"]["category"], obs["game_menu"]["item"]], [0, 0])
+
+	assert_true(await agent.act({"do": "menu_select", "category": 3, "item": 4}))
+	var menu: Dictionary = agent.observe()["game_menu"]
+	assert_eq([menu["category"], menu["item"]], [3, 4])
+	assert_eq(menu["items"][4], "結束遊戲")
+	assert_ne(menu["detail"], "")
+	assert_false(await agent.act({"do": "menu_select", "category": 3, "item": 5}), "越界项被拒")
+	assert_false(await agent.act({"do": "menu_select", "category": 4, "item": 0}), "越界分类被拒")
+	assert_false(await agent.act({"do": "menu"}), "已开着")
+	assert_false(await agent.act({"do": "walk", "dir": "up", "seconds": 0.1}), "选单开着不能走")
+
+	assert_true(await agent.act({"do": "close"}))
+	assert_eq(agent.observe()["mode"], "walking")

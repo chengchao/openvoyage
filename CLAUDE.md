@@ -102,6 +102,11 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到）。
   待办：3D 港口补 HUD + 港内 NPC → 转为默认 → 删 2D 网格（GridWalker/PortMap/TilePassability/NpcCrowd/port_*.txt）；
   主角像素走路动画；Departure 接世界航海。
+- [~] 游戏内选单（港里按 ESC 开/关；2D/3D 港口共用 DoorFlow）：内容表驱动——`godot/data/game_menu.json`
+  （分类 情報/艦隊/隨身物/系統 仿原版指令分组，标题与说明自撰）→ sim 层 `GameMenu`；`PortSession.Mode.GAME_MENU`
+  （只能从 WALKING 开、开着时不能进门/走动）+ `menu_detail`；表现层 `GameMenuPanel`（页签/项目/详情三栏 + 资金顶栏，键鼠皆可）。
+  agent：`menu` / `menu_select` / `close`，observe 带 `game_menu`。已实装 action：`status`（主角情報，详情栏显示港号与资金）、
+  `title`（回到標題）、`quit`（結束遊戲）；其余项 action 为空 = 「尚未開放」（灰字），随各里程碑在表里填 action 并加分支。
 - [ ] M6+：世界航海 / 贸易 / 战斗 / …（见 docs/koukai2-godot-plan.md §2）
 
 ## 逆向资料快速索引
