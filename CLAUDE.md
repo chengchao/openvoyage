@@ -98,6 +98,8 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   **agent 接口 `PortAgent`**：observe() 返回可序列化局面，act() 执行 walk/choose/leave/amount/cancel/next，headless 可玩。
   代码 lint 写在 `tests/unit/test_lint.gd`（随 GUT 跑；规则表：process-mode-disabled / full-rect-mouse-filter /
   gui-input-mouse-filter，违规须修或同行 `# lint-allow: <id>` 写明理由）。
+  关卡几何 lint 写在 `tests/unit/test_lint_ports.gd`（每个 ports/*.tscn 从 Spawn 用主角胶囊洪泛：
+  port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到）。
   待办：3D 港口补 HUD + 港内 NPC → 转为默认 → 删 2D 网格（GridWalker/PortMap/TilePassability/NpcCrowd/port_*.txt）；
   主角像素走路动画；Departure 接世界航海。
 - [ ] M6+：世界航海 / 贸易 / 战斗 / …（见 docs/koukai2-godot-plan.md §2）
