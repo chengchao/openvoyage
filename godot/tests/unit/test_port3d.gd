@@ -66,6 +66,34 @@ func test_quay_edge_keeps_player_out_of_the_sea() -> void:
 	assert_gt(s.player.global_position.y, -0.2, "朝海一直走也不会掉下码头")
 
 
+func _push(s: PortScene3D, from: Vector3, action: String, secs := 1.5) -> Vector3:
+	s.player.global_position = from
+	await wait_seconds(0.3)
+	Input.action_press(action)
+	await wait_seconds(secs)
+	Input.action_release(action)
+	await wait_seconds(0.5)
+	return s.player.global_position
+
+
+func test_stairs_sides_block_walking_off() -> void:
+	var p := await _push(_lisbon(), Vector3(0, 3, -14.5), "ui_left")
+	assert_gt(p.x, -2.0, "台阶侧面有隐形墙，横走走不出台阶")
+	assert_gt(p.y, 1.0, "仍站在台阶上")
+
+
+func test_stairs_still_lead_up_to_the_terrace() -> void:
+	var p := await _push(_lisbon(), Vector3(0, 0.1, -9), "ui_up", 3.0)
+	assert_lt(p.z, -18.5, "顺台阶走上台地")
+	assert_gt(p.y, 3.5, "到达台地高度")
+
+
+func test_terrace_edge_blocks_walking_off() -> void:
+	var p := await _push(_lisbon(), Vector3(10, 4.5, -20), "ui_down")
+	assert_lt(p.z, -17.5, "台地前缘有隐形墙")
+	assert_gt(p.y, 3.5, "仍站在台地上")
+
+
 func test_player_cannot_walk_while_inside_a_facility() -> void:
 	var s := _lisbon()
 	await wait_seconds(0.2)

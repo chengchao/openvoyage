@@ -87,6 +87,12 @@ size = Vector3(0.5, 3, 8.5)
 [sub_resource type="BoxShape3D" id="wall11"]
 size = Vector3(3, 3, 0.5)
 
+[sub_resource type="BoxShape3D" id="stair_rail"]
+size = Vector3(0.5, 7, 7)
+
+[sub_resource type="BoxShape3D" id="terrace_rail"]
+size = Vector3(20, 3, 0.5)
+
 [sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
 sky_top_color = Color(0.32, 0.52, 0.78, 1)
 sky_horizon_color = Color(0.86, 0.80, 0.70, 1)
@@ -157,9 +163,9 @@ shape = SubResource("departure_shape")
 [node name="Bounds" type="StaticBody3D" parent="."]
 
 [node name="Ground" type="CSGBox3D" parent="Geometry"]
-position = Vector3(0, -0.5, -4)
+position = Vector3(0, -0.5, -7.5)
 use_collision = true
-size = Vector3(44, 1, 14)
+size = Vector3(44, 1, 21)
 material = SubResource("m_stone")
 
 [node name="Terrace" type="CSGBox3D" parent="Geometry"]
@@ -565,3 +571,19 @@ shape = SubResource("wall10")
 [node name="Wall11" type="CollisionShape3D" parent="Bounds"]
 position = Vector3(10, 1, 11.25)
 shape = SubResource("wall11")
+
+[node name="StairRailL" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(-2.25, 3.5, -14.5)
+shape = SubResource("stair_rail")
+
+[node name="StairRailR" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(2.25, 3.5, -14.5)
+shape = SubResource("stair_rail")
+
+[node name="TerraceRailL" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(-12, 5.5, -17.75)
+shape = SubResource("terrace_rail")
+
+[node name="TerraceRailR" type="CollisionShape3D" parent="Bounds"]
+position = Vector3(12, 5.5, -17.75)
+shape = SubResource("terrace_rail")
