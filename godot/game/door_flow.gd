@@ -4,6 +4,7 @@ class_name DoorFlow
 extends Node
 
 const TITLE_SCENE := "res://game/main.tscn"
+const NOTICE_SECONDS := 4.0
 
 var session := PortSession.new()
 var facility_scene: FacilityScene
@@ -11,7 +12,8 @@ var director: DialogueDirector
 var pick_list: PickList
 var amount_entry: AmountEntry
 var game_menu: GameMenuPanel
-var last_said := ""  # 店主最近一句回话（供 agent 观察）
+var last_said := ""  # 店主最近一句回话或抵港通知（供 agent 观察）
+var enter_port := PortScene3D.enter  # 出航/读档后换进 world 所在港；测试换成不动场景树的假函数
 
 var port_id: int:
 	get: return session.port_id
@@ -27,7 +29,8 @@ func inject_story(event_script: EventScript, state: GameState) -> void:
 
 
 func is_in_facility() -> bool:
-	return session.mode in [PortSession.Mode.FACILITY_MENU, PortSession.Mode.PICK, PortSession.Mode.AMOUNT_ENTRY]
+	return session.slot >= 0 and session.mode in [
+		PortSession.Mode.FACILITY_MENU, PortSession.Mode.PICK, PortSession.Mode.AMOUNT_ENTRY]
 
 
 func is_in_cutscene() -> bool:
@@ -53,9 +56,32 @@ func leave() -> void:
 		_sync()
 
 
+func open_departure() -> void:
+	if session.open_departure():
+		_sync()
+
+
 func pick(index: int) -> void:
 	if session.pick(index):
 		_sync()
+		if session.mode == PortSession.Mode.SAILED:
+			enter_port.call(get_tree(), session.world)
+
+
+## 屏幕上方显示几秒的一行字（抵港通知）。
+func announce(text: String) -> void:
+	last_said = text
+	var layer := CanvasLayer.new()
+	var label := Label.new()
+	label.text = text
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 4)
+	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	label.position.y = 16
+	layer.add_child(label)
+	add_child(layer)
+	get_tree().create_timer(NOTICE_SECONDS).timeout.connect(layer.queue_free)
 
 
 func cancel_pick() -> void:
@@ -101,7 +127,7 @@ func _on_menu_action(action: StringName) -> void:
 		&"load":
 			var loaded := session.load_game()
 			if loaded != null:
-				PortScene3D.enter(get_tree(), loaded)
+				enter_port.call(get_tree(), loaded)
 
 
 func _say(line: String) -> void:

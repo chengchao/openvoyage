@@ -1,10 +1,9 @@
 ## HD-2D 港口场景根。港口本身在编辑器里手工摆（ports/*.tscn），本脚本只做契约：
-## Spawn 放主角、朝 PortDoor 走进去时走进门流程（DoorFlow）、Departure 报出航、镜头以固定斜角跟随。
+## Spawn 放主角、朝 PortDoor 走进去时走进门流程（DoorFlow）、走进 Departure 问去哪座港、镜头以固定斜角跟随。
 class_name PortScene3D
 extends Node3D
 
 signal door_entered(slot: int)
-signal departure_entered
 
 ## 港号（SNR 事件键高字节；里斯本 = 0）。
 @export var port_id := 0
@@ -41,7 +40,10 @@ func _ready() -> void:
 	_doors.assign(find_children("*", "PortDoor", true, false))
 	($Departure as Area3D).body_entered.connect(func(body: Node3D) -> void:
 		if body == player:
-			departure_entered.emit())
+			doors.open_departure())
+	var notice := World.current.take_notice()
+	if notice != "":
+		doors.announce(notice)
 	_camera.global_position = _camera_target()
 	_camera.look_at(player.global_position + Vector3.UP)
 

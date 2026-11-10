@@ -1,4 +1,4 @@
-## 港口行情表（纯逻辑，RefCounted）：真相源 res://data/goods.json（货物）+ res://data/ports.json（各港价格）。
+## 港口表与行情（纯逻辑，RefCounted）：真相源 res://data/goods.json（货物）+ res://data/ports.json（各港名称、场景、价格、航线）。
 ## 买进价 = 该港列出的单价；卖出价 = 其九折（去尾）。没列价的货物在该港不交易。
 class_name Market
 extends RefCounted
@@ -60,6 +60,14 @@ static func port_name(port_id: int) -> String:
 ## 该港的港口场景路径；未知港返回 ""。
 static func port_scene(port_id: int) -> String:
 	return _port(port_id).get("scene", "")
+
+
+## 从该港可直达的港：[{to, name, days}]；未知港返回 []。
+static func routes(port_id: int) -> Array:
+	var out := []
+	for r: Dictionary in _port(port_id).get("routes", []):
+		out.append({"to": int(r["to"]), "name": port_name(int(r["to"])), "days": int(r["days"])})
+	return out
 
 
 ## 仅供测试：清空静态缓存。

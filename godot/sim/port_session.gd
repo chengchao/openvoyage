@@ -1,11 +1,13 @@
 ## 港口玩法状态机（纯逻辑）：在港里走 → 撞门（剧情优先，docs/09 §9.A）→ 设施菜单 ⇄ 金额输入 → 离开；在港里走 ⇄ 游戏内选单。
-## 交易所买卖多一步：设施菜单 → 选货 → 金额输入（件数）→ 设施菜单。
+## 交易所买卖多一步：设施菜单 → 单选（选货）→ 金额输入（件数）→ 设施菜单。
+## 出航：港务局「啟航出海」或走进出航区 → 单选（选目的地）→ SAILED。world 当场改到目的港，
+## 本会话到此为止；表现层见到 SAILED 就换进 world 所在港的场景，那边另建会话。
 ## 不依赖场景树：表现层（DoorFlow）按 mode 渲染，agent 可直接驱动。转换只在合法 mode 下生效，否则返回 false/""。
 ## 玩家与剧情状态不在这里：都在 world 里，会话只是在它上面玩；换场景 = 换会话、不换 world。
 class_name PortSession
 extends RefCounted
 
-enum Mode { WALKING, CUTSCENE, FACILITY_MENU, AMOUNT_ENTRY, GAME_MENU, PICK }
+enum Mode { WALKING, CUTSCENE, FACILITY_MENU, AMOUNT_ENTRY, GAME_MENU, PICK, SAILED }
 
 const NOT_OPEN_YET := "（此功能尚未開放）"
 
@@ -23,14 +25,14 @@ var event_script: EventScript  # 为空 = 无剧情
 var save_path := SaveFile.DEFAULT_PATH  # 测试换成临时路径
 
 var mode := Mode.WALKING
-var slot := -1                       # 当前（或剧情后将进入的）设施槽号
+var slot := -1                       # 当前（或剧情后将进入的）设施槽号；-1 = 不在设施里
 var interp: EventInterpreter         # CUTSCENE 时有效
-var pending_action := &""             # PICK / AMOUNT_ENTRY 时有效：&"deposit" / &"withdraw" / &"buy_goods" / &"sell_goods"
+var pending_action := &""            # PICK / AMOUNT_ENTRY 时有效：这一步在办的事 &"deposit" / &"withdraw" / &"buy_goods" / &"sell_goods" / &"set_sail"
 var amount_cap := 0
 var amount_step := 100               # 金额输入的小步；货物按件数调
 var amount_prompt := ""
 var pick_prompt := ""                # PICK 时有效
-var pick_options: Array = []         # PICK 时有效：[{key, name, label, price, cap}]，label 带单价
+var pick_options: Array = []         # PICK 时有效，每行都有 label；货物行 {key, name, price, cap}，航线行 {to, name, days}
 var pending_good: Dictionary = {}    # 买卖的 AMOUNT_ENTRY 时有效：选中的那一行
 var _menu_notes := {}                # GAME_MENU 时有效：选单 action → 这次开选单以来的存/读档结果
 
@@ -91,16 +93,26 @@ func choose(index: int) -> String:
 			pick_prompt = "要買哪一種？" if buying else "要賣哪一種？"
 			mode = Mode.PICK
 			return ""
+		&"set_sail":
+			return "" if _open_route_pick() else "眼下沒有從這裡出發的航線。"
 		&"show_prices":
 			return price_list()
 		_:
 			return NOT_OPEN_YET
 
 
-## 选定一种货物，进金额输入（件数，上限 = 该行的 cap）。越界或不在选货时返回 false。
+## 走进出航区：从 WALKING 直接问去哪。没有航线或不在走路时返回 false。
+func open_departure() -> bool:
+	return mode == Mode.WALKING and _open_route_pick()
+
+
+## 选定一行。货物 → 进金额输入（件数，上限 = 该行的 cap）；目的地 → 启航。越界或不在单选时返回 false。
 func pick(index: int) -> bool:
 	if mode != Mode.PICK or index < 0 or index >= pick_options.size():
 		return false
+	if pending_action == &"set_sail":
+		_sail(pick_options[index])
+		return true
 	pending_good = pick_options[index]
 	amount_cap = pending_good["cap"]
 	amount_step = 1
@@ -185,7 +197,7 @@ func load_game() -> World:
 	return loaded
 
 
-## 选单详情栏的文字：该项说明；主角情報追加所在港与资金，存/读档追加结果，尚未開放的项追加提示。越界返回 ""。
+## 选单详情栏的文字：该项说明；主角情報追加所在港、日期与资金，存/读档追加结果，尚未開放的项追加提示。越界返回 ""。
 func menu_detail(cat_index: int, item_index: int) -> String:
 	var rows := GameMenu.items(cat_index)
 	if item_index < 0 or item_index >= rows.size():
@@ -194,7 +206,7 @@ func menu_detail(cat_index: int, item_index: int) -> String:
 	var action := GameMenu.action_of(cat_index, item_index)
 	match action:
 		&"status":
-			text += "\n港口 %d　%s" % [port_id, balance_line()]
+			text += "\n%s　第 %d 日　%s" % [Market.port_name(port_id), world.day, balance_line()]
 		&"cargo":
 			for good: String in player_state.cargo:
 				text += "\n%s　%d 件" % [Market.label(good), player_state.cargo[good]]
@@ -248,6 +260,30 @@ func _sell_rows() -> Array:
 	return rows
 
 
+func _open_route_pick() -> bool:
+	var rows := Market.routes(port_id)
+	if rows.is_empty():
+		return false
+	for r: Dictionary in rows:
+		r["label"] = "%s　%d 日" % [r["name"], r["days"]]
+	pending_action = &"set_sail"
+	pick_options = rows
+	pick_prompt = "要前往哪一座港口？"
+	mode = Mode.PICK
+	return true
+
+
+## ponytail: 航行免费且瞬间到达；补给、水手、海上事件等世界航海做出来再接在这里。
+func _sail(route: Dictionary) -> void:
+	world.day += route["days"]
+	world.port_id = route["to"]
+	world.notice = "航行 %d 日，抵達%s。" % [route["days"], route["name"]]
+	_end_step()
+	slot = -1
+	mode = Mode.SAILED
+
+
+## 结束单选/金额输入，回到开它的地方：设施菜单，或（出航区开的单选）港里。
 func _end_step() -> void:
 	pending_action = &""
 	amount_cap = 0
@@ -256,7 +292,7 @@ func _end_step() -> void:
 	pick_prompt = ""
 	pick_options = []
 	pending_good = {}
-	mode = Mode.FACILITY_MENU
+	mode = Mode.FACILITY_MENU if slot >= 0 else Mode.WALKING
 
 
 func _story_at(door_slot: int) -> EventInterpreter:

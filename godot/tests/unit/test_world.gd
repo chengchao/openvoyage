@@ -82,3 +82,19 @@ func test_malformed_saves_are_rejected_whole() -> void:
 		assert_null(World.from_dict(_broken(c[0], c[1])), "%s = %s 应整档拒收" % [c[0], c[1]])
 	for junk: Variant in [null, 3, "save", [], {}]:
 		assert_null(World.from_dict(junk), "%s 不是存档" % [junk])
+
+
+func test_being_in_the_second_port_round_trips() -> void:
+	var w := _played()
+	w.port_id = 1
+	var back := World.from_dict(_through_json(w.to_dict()))
+	assert_not_null(back)
+	assert_eq(back.port_id, 1)
+
+
+func test_notice_is_read_once_and_not_saved() -> void:
+	var w := World.new()
+	w.notice = "航行 4 日，抵達塞維利亞。"
+	assert_false(w.to_dict().has("notice"))
+	assert_eq(w.take_notice(), "航行 4 日，抵達塞維利亞。")
+	assert_eq(w.take_notice(), "")

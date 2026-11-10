@@ -1,12 +1,21 @@
 {
-  "_doc": "港口表（自撰）：id=港号（PortScene3D.port_id），scene=港口场景，prices=该港交易所买进单价（卖出价为其九折）。没列价的货物在该港不交易。价格为自定数值。",
+  "_doc": "港口表（自撰）：id=港号（PortScene3D.port_id），scene=港口场景，prices=该港交易所买进单价（卖出价为其九折），routes=从该港可直达的港（to=港号，days=航程日数）。没列价的货物在该港不交易。价格与日数为自定数值。",
   "ports": [
     {
       "id": 0,
       "key": "lisbon",
       "name": "里斯本",
       "scene": "res://game/port3d/ports/lisbon.tscn",
-      "prices": {"wine": 40, "olive_oil": 55, "salt": 18, "woolens": 75, "sugar": 95}
+      "prices": {"wine": 40, "olive_oil": 55, "salt": 18, "woolens": 75, "sugar": 95, "pepper": 220},
+      "routes": [{"to": 1, "days": 4}]
+    },
+    {
+      "id": 1,
+      "key": "seville",
+      "name": "塞維利亞",
+      "scene": "res://game/port3d/ports/seville.tscn",
+      "prices": {"wine": 28, "olive_oil": 36, "salt": 30, "woolens": 110, "sugar": 125, "pepper": 170},
+      "routes": [{"to": 0, "days": 4}]
     }
   ]
 }

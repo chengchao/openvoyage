@@ -235,3 +235,32 @@ func test_loading_with_no_save_stays_in_the_menu_and_says_so() -> void:
 	_press("ui_accept")
 	assert_not_null(f.game_menu, "没有存档：留在选单")
 	assert_string_contains(f.game_menu.detail_text(), "還沒有存檔")
+
+
+func test_sailing_asks_to_enter_the_destination_port() -> void:
+	var entered: Array[World] = []
+	var f := _inside(3)
+	f.enter_port = func(_tree: SceneTree, w: World) -> void: entered.append(w)
+	f.facility_scene.menu_selected.emit(0, "啟航出海")
+	assert_not_null(f.pick_list, "啟航先选目的地")
+	f.pick_list.confirm()
+	assert_eq(entered, [f.session.world])
+	assert_eq(f.session.world.port_id, 1)
+	assert_true(f.is_busy(), "等换场景期间主角不动")
+
+
+func test_escape_in_a_destination_pick_opened_while_walking_returns_to_walking() -> void:
+	var f := _flow()
+	f.open_departure()
+	assert_not_null(f.pick_list)
+	assert_null(f.facility_scene, "不在设施里")
+	_press("ui_cancel")
+	assert_null(f.pick_list)
+	assert_false(f.is_busy())
+	assert_null(f.game_menu, "同一下 ESC 不会顺手开选单")
+
+
+func test_arrival_notice_is_shown_and_observable() -> void:
+	var f := _flow()
+	f.announce("航行 4 日，抵達塞維利亞。")
+	assert_eq(f.last_said, "航行 4 日，抵達塞維利亞。")

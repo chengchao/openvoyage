@@ -12,11 +12,18 @@ var player := PlayerState.new(STARTING_GOLD, 0)
 var story := GameState.new()
 var port_id := 0
 var day := 1
+var notice := ""  # 给下一个港口场景显示一次的话（抵港通知）；不进存档
 
 
 static func new_game() -> World:
 	current = World.new()
 	return current
+
+
+func take_notice() -> String:
+	var text := notice
+	notice = ""
+	return text
 
 
 func to_dict() -> Dictionary:

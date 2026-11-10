@@ -2,7 +2,9 @@
 ##
 ## M0：按工程配置启动 → 主菜单可达（开始/退出按钮存在且已接线）→ 无错退出(0)。
 ## M2：从主菜单进入资料查看器，能从占位包成功打开至少 10 项图片。
-## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；交易所买进再卖出；走进银行存款；撞门剧情；选单存档 → 提款 → 读档回到存档时的局面；回到標題 →「繼續航程」接着存档玩；ESC 开游戏内选单、移光标、关闭后照常走路。
+## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；交易所买进再卖出；走进银行存款；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
+## 航行：新开一局，里斯本买毛織品 → 港务局啟航 → 塞維利亞卖出，现金高于开局 → 走进塞維利亞的银行存款。
+## 存读档（在塞維利亞）：选单存档 → 提款 → 读档回到存档时的局面；回到標題 →「繼續航程」接着存档玩，人还在塞維利亞。
 ## 运行：godot --headless --path godot -s tests/smoke/smoke_test.gd
 extends SceneTree
 
@@ -81,7 +83,8 @@ func _smoke() -> bool:
 		return false
 	if not await _game_menu(port):
 		return false
-	var ok := await _save_and_load(port) and await _continue_from_title()
+	var seville := await _voyage()
+	var ok := seville != null and await _save_and_load(seville) and await _continue_from_title()
 	DirAccess.remove_absolute(SAVE_PATH)
 	return ok
 
@@ -112,6 +115,89 @@ func _door(port: PortScene3D) -> bool:
 func _stand_before(port: PortScene3D, door: PortDoor) -> void:
 	var front := door.global_position + door.global_basis.z * 1.5
 	port.player.global_position = Vector3(front.x, door.global_position.y - 0.9, front.z)
+
+
+## 站到某种设施的门前，朝门里推进去。
+func _walk_into(port: PortScene3D, key: StringName) -> bool:
+	for door: PortDoor in port.find_children("*", "PortDoor", true, false):
+		if FacilityType.of(door.slot).key == key:
+			_stand_before(port, door)
+			for _i in 3:
+				await physics_frame  # 瞬移后门的重叠名单要过一个物理步才更新，否则会被刚离开的那扇门再拉进去
+			var inward := -door.global_basis.z
+			var action := "ui_up" if inward.z < -0.5 else ("ui_left" if inward.x < 0.0 else "ui_right")
+			return await _push_into_door(port, action) and port.doors.session.slot == door.slot
+	return false
+
+
+func _leave(port: PortScene3D, agent: PortAgent) -> bool:
+	if not await agent.act({"do": "leave"}):
+		return false
+	for _i in 10:
+		await physics_frame
+	return not port.doors.is_busy()
+
+
+## 低买高卖：新开一局，里斯本买 20 件毛織品 → 港务局啟航 → 塞維利亞卖掉，现金高于开局 → 存 500 进塞維利亞的银行。
+## 返回塞維利亞的港口场景；走不通返回 null。
+func _voyage() -> PortScene3D:
+	PortScene3D.enter(self, World.new_game())
+	for _i in 5:
+		await physics_frame
+	var agent := PortAgent.current(self)
+	if agent == null or agent.observe()["port"]["id"] != 0:
+		push_error("新开一局没有进里斯本")
+		return null
+	if not (await _walk_into(agent.port, &"market") and await agent.act({"do": "choose", "index": 0})):
+		push_error("里斯本交易所走不进或不能採購：%s" % agent.observe())
+		return null
+	var options: Array = agent.observe()["pick"]["options"]
+	var row := -1
+	for i in options.size():
+		if options[i].contains(Market.label("woolens")):
+			row = i
+	if not (await agent.act({"do": "pick", "index": row}) and await agent.act({"do": "amount", "value": 20})
+			and await _leave(agent.port, agent)):
+		push_error("里斯本买毛織品走不通：%s" % agent.observe())
+		return null
+
+	if not (await _walk_into(agent.port, &"harbor") and await agent.act({"do": "choose", "index": 0})
+			and agent.observe()["mode"] == "pick"):
+		push_error("港务局啟航没有问去哪：%s" % agent.observe())
+		return null
+	var route: String = agent.observe()["pick"]["options"][0]
+	var lisbon := agent.port
+	if not await agent.act({"do": "pick", "index": 0}):
+		push_error("选不了目的地")
+		return null
+	for _i in 5:
+		await physics_frame
+	agent = PortAgent.current(self)
+	if agent == null or agent.port == lisbon:
+		push_error("启航后没有换进目的港的场景")
+		return null
+	var obs := agent.observe()
+	if obs["port"]["id"] != 1 or obs["day"] != 5 or obs["mode"] != "walking" or obs["cargo"] != {"woolens": 20}:
+		push_error("抵港后的局面有误：%s" % obs)
+		return null
+	print("  航行：『%s』→ %s（%s，第 %d 日）" % [route, obs["said"], obs["port"]["name"], obs["day"]])
+
+	if not (await _walk_into(agent.port, &"market") and await agent.act({"do": "choose", "index": 1})
+			and await agent.act({"do": "pick", "index": 0}) and await agent.act({"do": "amount", "value": 20})
+			and await _leave(agent.port, agent)):
+		push_error("塞維利亞卖货走不通：%s" % agent.observe())
+		return null
+	var gold: int = agent.observe()["gold"]
+	if gold <= World.STARTING_GOLD:
+		push_error("跑了一趟没赚到钱：現金 %d" % gold)
+		return null
+	print("  航行：塞維利亞卖出 20 件毛織品，現金 %d → %d" % [World.STARTING_GOLD, gold])
+
+	if not (await _walk_into(agent.port, &"bank") and await agent.act({"do": "choose", "index": 0})
+			and await agent.act({"do": "amount", "value": 500}) and await _leave(agent.port, agent)):
+		push_error("塞維利亞的银行走不进或存不了款：%s" % agent.observe())
+		return null
+	return agent.port
 
 
 ## 交易所：走进门 → 採購 → 选货 → 件数 → 出售同一批 → 亏掉买卖价差 → 离开。
@@ -289,7 +375,8 @@ func _save_and_load(port: PortScene3D) -> bool:
 		push_error("读档后没有换进存档所在的港口场景")
 		return false
 	var obs := PortAgent.new(reloaded).observe()
-	if obs["mode"] != "walking" or obs["gold"] != saved["gold"] or obs["bank"] != saved["bank"] or saved["bank"] == 0:
+	if (obs["mode"] != "walking" or obs["gold"] != saved["gold"] or obs["bank"] != saved["bank"] or saved["bank"] == 0
+			or obs["port"] != saved["port"]):
 		push_error("读档后局面不是存档时的：%s（存档时现金 %d 存款 %d）" % [obs, saved["gold"], saved["bank"]])
 		return false
 	print("  存读档：『%s』→ 提光存款 → 读档 → 現金 %d　存款 %d" % [note.replace("\n", " "), obs["gold"], obs["bank"]])
@@ -320,8 +407,8 @@ func _continue_from_title() -> bool:
 		push_error("繼續航程未进入港口场景")
 		return false
 	var obs := PortAgent.new(port).observe()
-	if obs["gold"] != before["gold"] or obs["bank"] != before["bank"]:
+	if obs["gold"] != before["gold"] or obs["bank"] != before["bank"] or obs["port"] != before["port"] or obs["port"]["id"] != 1:
 		push_error("繼續航程后的局面不是存档里的：%s" % obs)
 		return false
-	print("  標題 →「繼續航程」→ 里斯本，現金 %d　存款 %d" % [obs["gold"], obs["bank"]])
+	print("  標題 →「繼續航程」→ %s，現金 %d　存款 %d" % [obs["port"]["name"], obs["gold"], obs["bank"]])
 	return true

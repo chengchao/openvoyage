@@ -1,5 +1,7 @@
 ## 给 agent 用的港口接口：observe() 返回可序列化的局面，act() 执行一个动作（走路会等物理帧，需 await）。
 ## 走路经真实输入动作与物理引擎，菜单/剧情经 DoorFlow → PortSession，与玩家操作同一路径；headless 可玩。
+## 一个 agent 只管一座港的场景。出航（pick 目的地后 mode 变 "sailed"）或读档会换场景，手上的 port 随即被释放：
+## 等几个物理帧，再用 PortAgent.current(tree) 拿新港的 agent，别再碰旧的。
 class_name PortAgent
 extends RefCounted
 
@@ -11,6 +13,7 @@ const MODE_NAMES := {
 	PortSession.Mode.AMOUNT_ENTRY: "amount_entry",
 	PortSession.Mode.GAME_MENU: "game_menu",
 	PortSession.Mode.PICK: "pick",
+	PortSession.Mode.SAILED: "sailed",
 }
 
 var port: PortScene3D
@@ -18,6 +21,12 @@ var port: PortScene3D
 
 func _init(p_port: PortScene3D) -> void:
 	port = p_port
+
+
+## 场景树当前显示的港的 agent；当前场景不是港口（标题画面、换场景途中）返回 null。
+static func current(tree: SceneTree) -> PortAgent:
+	var scene := tree.current_scene as PortScene3D
+	return PortAgent.new(scene) if scene != null else null
 
 
 func observe() -> Dictionary:
@@ -32,6 +41,7 @@ func observe() -> Dictionary:
 	doors.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["distance"] < b["distance"])
 	var obs := {
 		"mode": MODE_NAMES[s.mode],
+		"port": {"id": s.port_id, "name": Market.port_name(s.port_id)},
 		"position": [me.x, me.y, me.z],
 		"doors": doors,
 		"gold": s.player_state.gold,
@@ -59,8 +69,8 @@ func observe() -> Dictionary:
 
 ## 执行一个动作，合法且已执行返回 true。动作：
 ## {"do":"walk","dir":"up|down|left|right","seconds":s} {"do":"choose","index":i}（末项 = 離開）
-## {"do":"leave"} {"do":"pick","index":i}（选货） {"do":"amount","value":n}
-## {"do":"cancel"}（取消选货或金额输入） {"do":"next"}（剧情下一句）
+## {"do":"leave"} {"do":"pick","index":i}（单选：选货，或选出航目的地——选定即启航） {"do":"amount","value":n}
+## {"do":"cancel"}（取消单选或金额输入） {"do":"next"}（剧情下一句）
 ## {"do":"menu"}（开游戏内选单） {"do":"menu_select","category":i,"item":j}（移光标） {"do":"close"}（关选单）
 ## {"do":"menu_activate"}（选定光标所在的选单项，如儲存進度；尚未開放的项返回 false）
 func act(a: Dictionary) -> bool:

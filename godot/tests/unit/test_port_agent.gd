@@ -3,12 +3,14 @@ extends GutTest
 
 const MARKET := 0
 const TAVERN := 1
+const HARBOR := 3
 const BANK := 8
 const SAVE_PATH := "user://test_tmp/port_agent.json"
 
 
 func before_each() -> void:
 	World.current = null
+	_entered.clear()
 	DirAccess.remove_absolute(SAVE_PATH)
 
 
@@ -16,10 +18,15 @@ func after_all() -> void:
 	DirAccess.remove_absolute(SAVE_PATH)
 
 
-func _agent() -> PortAgent:
-	var port: PortScene3D = load("res://game/port3d/ports/lisbon.tscn").instantiate()
+## 换港（出航/读档）在测试里只记下要去的 world，不真的换 GUT 的当前场景。
+var _entered: Array[World] = []
+
+
+func _agent(port_key := "lisbon") -> PortAgent:
+	var port: PortScene3D = load("res://game/port3d/ports/%s.tscn" % port_key).instantiate()
 	add_child_autofree(port)
 	port.doors.session.save_path = SAVE_PATH
+	port.doors.enter_port = func(_tree: SceneTree, w: World) -> void: _entered.append(w)
 	return PortAgent.new(port)
 
 
@@ -49,6 +56,7 @@ func test_observation_at_spawn() -> void:
 	assert_eq(obs["position"].size(), 3)
 	assert_eq(obs["gold"], World.STARTING_GOLD)
 	assert_eq(obs["day"], 1)
+	assert_eq(obs["port"], {"id": 0, "name": "里斯本"})
 	var tavern := _door(obs, TAVERN)
 	assert_eq(tavern.get("name"), "酒馆", "观察里列出各门：槽号、名字、位置")
 	assert_gt(obs["doors"].size(), 1)
@@ -201,3 +209,56 @@ func test_agent_saves_from_the_game_menu() -> void:
 	assert_true(await agent.act({"do": "menu_activate"}))
 	assert_string_contains(agent.observe()["game_menu"]["detail"], "進度已儲存")
 	assert_true(SaveFile.exists(SAVE_PATH))
+
+
+func test_agent_sails_from_the_harbor_to_the_next_port_and_sells_at_a_profit() -> void:
+	var agent := _agent()
+	await wait_seconds(0.2)
+	agent.port.doors.open(MARKET)
+	await agent.act({"do": "choose", "index": 0})
+	var options: Array = agent.observe()["pick"]["options"]
+	for i in options.size():
+		if options[i].contains(Market.label("woolens")):
+			await agent.act({"do": "pick", "index": i})
+	await agent.act({"do": "amount", "value": 20})
+	await agent.act({"do": "leave"})
+
+	agent.port.doors.open(HARBOR)
+	assert_true(await agent.act({"do": "choose", "index": 0}), "啟航出海")
+	var obs := agent.observe()
+	assert_eq(obs["mode"], "pick")
+	assert_string_contains(obs["pick"]["options"][0], "塞維利亞")
+	assert_true(await agent.act({"do": "pick", "index": 0}))
+	assert_eq(agent.observe()["mode"], "sailed")
+	assert_eq(_entered, [World.current], "表现层被要求换进目的港")
+	assert_false(await agent.act({"do": "walk", "dir": "up", "seconds": 0.1}), "这座港已经离开了")
+
+	agent.port.free()
+	var there := _agent(Market.port_scene(World.current.port_id).get_file().get_basename())
+	await wait_seconds(0.2)
+	obs = there.observe()
+	assert_eq([obs["mode"], obs["port"], obs["day"]], ["walking", {"id": 1, "name": "塞維利亞"}, 5])
+	assert_eq(obs["said"], "航行 4 日，抵達塞維利亞。", "抵港通知可观察")
+	there.port.doors.open(MARKET)
+	await there.act({"do": "choose", "index": 1})
+	await there.act({"do": "pick", "index": 0})
+	await there.act({"do": "amount", "value": 20})
+	assert_gt(there.observe()["gold"], World.STARTING_GOLD)
+
+
+func test_agent_cancels_a_destination_pick_opened_at_the_departure_zone() -> void:
+	var agent := _agent()
+	await wait_seconds(0.2)
+	agent.port.player.global_position = agent.port.get_node("Departure").global_position
+	await wait_seconds(0.2)
+	var obs := agent.observe()
+	assert_eq(obs["mode"], "pick", "走进出航区就问去哪")
+	assert_false(obs.has("facility"))
+	assert_true(await agent.act({"do": "cancel"}))
+	assert_eq(agent.observe()["mode"], "walking")
+	assert_eq(_entered, [])
+	assert_true(await agent.act({"do": "walk", "dir": "up", "seconds": 0.2}), "取消后照常走路")
+
+
+func test_current_finds_the_port_the_tree_is_showing() -> void:
+	assert_null(PortAgent.current(get_tree()), "GUT 的当前场景不是港口")

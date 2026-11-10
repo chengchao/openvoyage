@@ -75,3 +75,12 @@ func test_corrupt_or_foreign_files_load_null() -> void:
 func test_save_to_an_unwritable_path_reports_failure() -> void:
 	_write("a file where the save's folder should be")
 	assert_false(SaveFile.save(World.new(), PATH + "/save.json"))
+
+
+func test_a_save_made_in_the_second_port_loads_back_there() -> void:
+	var w := World.new()
+	w.port_id = 1
+	w.day = 5
+	assert_true(SaveFile.save(w, PATH))
+	var back := SaveFile.load(PATH)
+	assert_eq([back.port_id, back.day], [1, 5])

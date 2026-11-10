@@ -2,6 +2,7 @@
 extends GutTest
 
 const LISBON := 0
+const SEVILLE := 1
 const NO_SUCH_PORT := 999
 
 
@@ -20,10 +21,9 @@ func test_port_lists_its_goods_with_buy_and_sell_prices() -> void:
 		assert_lt(row["sell"], row["buy"], "同港买进再卖出必亏")
 
 
-func test_goods_without_a_listed_price_do_not_trade_at_the_port() -> void:
-	var traded := Market.goods(LISBON).map(func(r: Dictionary) -> String: return r["key"])
-	assert_does_not_have(traded, "pepper", "里斯本不产胡椒")
-	assert_ne(Market.label("pepper"), "", "但胡椒在货物表里")
+func test_pepper_trades_in_seville() -> void:
+	var traded := Market.goods(SEVILLE).map(func(r: Dictionary) -> String: return r["key"])
+	assert_has(traded, "pepper")
 
 
 func test_label_looks_up_any_good() -> void:
@@ -45,3 +45,35 @@ func test_port_scene_comes_from_the_ports_table() -> void:
 	assert_eq(Market.port_scene(0), "res://game/port3d/ports/lisbon.tscn")
 	assert_true(ResourceLoader.exists(Market.port_scene(0)))
 	assert_eq(Market.port_scene(999), "", "未知港")
+
+
+func test_every_port_has_a_scene_that_exists() -> void:
+	for id in [LISBON, SEVILLE]:
+		assert_true(ResourceLoader.exists(Market.port_scene(id)), "港 %d 的场景" % id)
+	assert_eq(Market.port_name(SEVILLE), "塞維利亞")
+
+
+func test_routes_list_destination_name_and_days() -> void:
+	assert_eq(Market.routes(LISBON), [{"to": SEVILLE, "name": "塞維利亞", "days": 4}])
+	assert_eq(Market.routes(SEVILLE), [{"to": LISBON, "name": "里斯本", "days": 4}])
+	assert_eq(Market.routes(NO_SUCH_PORT), [])
+
+
+## 在 from 买、到 to 卖能赚钱的货物（卖价已含九折）。
+func _profitable(from: int, to: int) -> Array:
+	var sell := {}
+	for g: Dictionary in Market.goods(to):
+		sell[g["key"]] = g["sell"]
+	return Market.goods(from).filter(func(g: Dictionary) -> bool: return sell.get(g["key"], 0) > g["buy"])
+
+
+func test_trade_is_profitable_in_both_directions() -> void:
+	assert_gte(_profitable(LISBON, SEVILLE).size(), 2, "里斯本 → 塞維利亞 至少两种货有赚头")
+	assert_gte(_profitable(SEVILLE, LISBON).size(), 2, "塞維利亞 → 里斯本 至少两种货有赚头")
+
+
+func test_nothing_bought_can_be_stranded() -> void:
+	for pair in [[LISBON, SEVILLE], [SEVILLE, LISBON]]:
+		var taken := Market.goods(pair[1]).map(func(g: Dictionary) -> String: return g["key"])
+		for g: Dictionary in Market.goods(pair[0]):
+			assert_has(taken, g["key"], "港 %d 卖的%s，港 %d 得收" % [pair[0], g["label"], pair[1]])

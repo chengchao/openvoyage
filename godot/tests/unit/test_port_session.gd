@@ -155,12 +155,14 @@ func test_open_menu_blocks_port_actions() -> void:
 	assert_eq(s.mode, PortSession.Mode.GAME_MENU)
 
 
-func test_menu_detail_for_status_shows_port_and_balance() -> void:
+func test_menu_detail_for_status_shows_port_name_day_and_balance() -> void:
 	var s := PortSession.new()
-	s.port_id = 7
+	s.port_id = 1
+	s.world.day = 9
 	var lines := s.menu_detail(0, 3).split("\n")
 	assert_eq(lines[0], GameMenu.items(0)[3]["desc"])
-	assert_string_contains(lines[-1], "7")
+	assert_string_contains(lines[-1], "塞維利亞")
+	assert_string_contains(lines[-1], "第 9 日")
 	assert_string_contains(lines[-1], s.balance_line())
 
 
@@ -260,8 +262,8 @@ func test_selling_with_nothing_the_port_trades_gets_a_line() -> void:
 	var s := _at_market()
 	assert_ne(s.choose(SELL), "", "船舱空")
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
-	s.player_state.cargo = {"pepper": 3}
-	assert_ne(s.choose(SELL), "", "里斯本不收胡椒")
+	s.player_state.cargo = {"amber": 3}
+	assert_ne(s.choose(SELL), "", "这座港没给琥珀标价，不收")
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
 
 
@@ -408,3 +410,92 @@ func test_load_of_a_corrupt_save_says_so() -> void:
 	f.close()
 	assert_null(s.load_game())
 	assert_string_contains(s.menu_detail(SYSTEM, LOAD), "損毀")
+
+
+const HARBOR := 3
+const SET_SAIL := 0
+const SEVILLE := 1
+
+
+func test_setting_sail_from_the_harbor_picks_a_destination_and_travels() -> void:
+	var s := PortSession.new()
+	s.enter_door(HARBOR)
+	assert_eq(s.choose(SET_SAIL), "")
+	assert_eq(s.mode, PortSession.Mode.PICK)
+	assert_eq(s.pick_options.size(), Market.routes(0).size())
+	assert_string_contains(s.pick_options[0]["label"], "塞維利亞")
+	assert_string_contains(s.pick_options[0]["label"], "4", "列出航程日数")
+	assert_true(s.pick(0))
+	assert_eq(s.mode, PortSession.Mode.SAILED)
+	assert_eq([s.world.port_id, s.world.day], [SEVILLE, 5])
+	assert_eq(s.world.player.gold, World.STARTING_GOLD, "航行不花钱")
+	assert_eq(s.world.take_notice(), "航行 4 日，抵達塞維利亞。")
+
+
+func test_cancelling_the_destination_pick_at_the_harbor_returns_to_its_menu() -> void:
+	var s := PortSession.new()
+	s.enter_door(HARBOR)
+	s.choose(SET_SAIL)
+	assert_true(s.cancel_pick())
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+	assert_eq([s.world.port_id, s.world.day], [0, 1])
+	assert_true(s.leave())
+
+
+func test_departure_zone_opens_the_destination_pick_from_walking() -> void:
+	var s := PortSession.new()
+	assert_true(s.open_departure())
+	assert_eq(s.mode, PortSession.Mode.PICK)
+	assert_string_contains(s.pick_options[0]["label"], "塞維利亞")
+	assert_false(s.open_departure(), "已经在选了")
+	assert_true(s.cancel_pick())
+	assert_eq(s.mode, PortSession.Mode.WALKING, "从哪儿开的回哪儿")
+	s.open_departure()
+	assert_true(s.pick(0))
+	assert_eq([s.mode, s.world.port_id], [PortSession.Mode.SAILED, SEVILLE])
+
+
+func test_departure_is_refused_outside_walking() -> void:
+	var s := PortSession.new()
+	s.enter_door(TAVERN)
+	assert_false(s.open_departure())
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+
+
+func test_a_port_without_routes_cannot_be_left() -> void:
+	var s := PortSession.new()
+	s.port_id = 999
+	assert_false(s.open_departure())
+	s.enter_door(HARBOR)
+	assert_ne(s.choose(SET_SAIL), "", "港务局说明没有航线")
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+
+
+func test_a_session_that_sailed_accepts_nothing_more() -> void:
+	var s := PortSession.new()
+	s.open_departure()
+	s.pick(0)
+	assert_false(s.enter_door(TAVERN))
+	assert_false(s.open_menu())
+	assert_false(s.open_departure())
+	assert_false(s.cancel_pick())
+	assert_eq(s.mode, PortSession.Mode.SAILED)
+
+
+func test_goods_bought_in_one_port_sell_for_more_in_the_other() -> void:
+	var w := World.new()
+	var s := PortSession.new(w)
+	s.enter_door(MARKET)
+	s.choose(BUY)
+	var row: int = s.pick_options.map(func(r: Dictionary) -> String: return r["key"]).find("woolens")
+	s.pick(row)
+	s.confirm_amount(20)
+	s.leave()
+	s.open_departure()
+	s.pick(0)
+	var there := PortSession.new(w)
+	there.enter_door(MARKET)
+	there.choose(SELL)
+	there.pick(0)
+	there.confirm_amount(20)
+	assert_gt(w.player.gold, World.STARTING_GOLD, "低买高卖赚到钱")
