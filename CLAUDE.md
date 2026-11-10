@@ -107,7 +107,7 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到）。
   里斯本现有八扇门：交易所/酒馆/港务局/造船所（码头一排）、教会/王宫/行会（台地）、银行（槽 8，广场东侧，门朝西——从广场往东走进去）。
   塞維利亞（港 1，河港：广场北排交易所/酒馆/港务局、西侧银行门朝东、东岸栈桥出航）是第二座港。
-  待办：港内 NPC（旧 2D 的 NpcCrowd 已随网格港删除，需按 3D 重做）+ HUD；主角像素走路动画。
+  待办：港内 NPC（旧 2D 的 NpcCrowd 已随网格港删除，需按 3D 重做）；主角像素走路动画。
 - [~] 游戏内选单（港里按 ESC 开/关）：内容表驱动——`godot/data/game_menu.json`
   （分类 情報/艦隊/隨身物/系統 仿原版指令分组，标题与说明自撰）→ sim 层 `GameMenu`；`PortSession.Mode.GAME_MENU`
   （只能从 WALKING 开、开着时不能进门/走动）+ `menu_detail`；表现层 `GameMenuPanel`（页签/项目/详情三栏 + 资金顶栏，键鼠皆可）。
@@ -143,6 +143,10 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   WALKING → CUTSCENE → WALKING（开场只演一次，旗标 0）。目标「現金加存款達到 10000」在 `World.goal()`
   （达成即立旗标 1，之后花掉也算）；达成后进里斯本王宫演一次道贺（旗标 2），游戏照常继续。
   主角情報与 `PortAgent.observe()["goal"]` 都显示目标与进度。
+- [~] 港口 HUD 与主菜单：`PortHud`（CanvasLayer layer 1，由 DoorFlow 持有，`_sync()` 时 refresh）——顶上一条
+  港名/日期/现金/船舱/目标进度（游戏内选单开着时让位），底下一行操作提示只在走路时显示；抵港通知排在这条下面。
+  主菜单全繁体（開始遊戲/繼續航程/結束遊戲）+ 标题 + 版本号（`project.godot` 的 `config/version`）；
+  資料檢視器是开发工具，只在 `OS.is_debug_build()` 时显示按钮（`MainMenu.debug_tools` 可注入）。
 - [ ] M6+：世界航海 / 贸易 / 战斗 / …（见 docs/koukai2-godot-plan.md §2）
 
 ## 逆向资料快速索引

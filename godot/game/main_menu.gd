@@ -9,6 +9,7 @@ signal view_requested
 signal quit_requested
 
 var save_path := SaveFile.DEFAULT_PATH  # 测试换成临时路径
+var debug_tools := OS.is_debug_build()  # 资料检视器是开发工具，发行版不给玩家看；测试可改
 
 
 func _ready() -> void:
@@ -16,5 +17,8 @@ func _ready() -> void:
 	var resume := %ContinueButton as Button
 	resume.disabled = SaveFile.load(save_path) == null  # 读不出来的存档也不给点，免得点了没反应
 	resume.pressed.connect(func() -> void: continue_requested.emit())
-	(%ViewButton as Button).pressed.connect(func() -> void: view_requested.emit())
+	var viewer := %ViewButton as Button
+	viewer.visible = debug_tools
+	viewer.pressed.connect(func() -> void: view_requested.emit())
+	(%Version as Label).text = "v%s" % ProjectSettings.get_setting("application/config/version", "")
 	(%QuitButton as Button).pressed.connect(func() -> void: quit_requested.emit())

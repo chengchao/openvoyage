@@ -1,5 +1,5 @@
 ## 进门流程的表现层：玩法状态全在 PortSession（sim）。玩家/agent 的动作转给 session，
-## 再由 _sync() 让界面（剧情对话 / 设施面板 / 单选列表 / 金额输入 / 游戏内选单）与 session.mode 一致。
+## 再由 _sync() 让界面（HUD / 剧情对话 / 设施面板 / 单选列表 / 金额输入 / 游戏内选单）与 session 一致。
 class_name DoorFlow
 extends Node
 
@@ -7,6 +7,7 @@ const TITLE_SCENE := "res://game/main.tscn"
 const NOTICE_SECONDS := 4.0
 
 var session := PortSession.new()
+var hud := PortHud.new()
 var facility_scene: FacilityScene
 var director: DialogueDirector
 var pick_list: PickList
@@ -21,6 +22,11 @@ var port_id: int:
 var player_state: PlayerState:
 	get: return session.player_state
 	set(v): session.player_state = v
+
+
+func _ready() -> void:
+	hud.setup(session)
+	add_child(hud)
 
 
 func inject_story(event_script: EventScript, state: GameState) -> void:
@@ -83,7 +89,7 @@ func announce(text: String) -> void:
 	label.add_theme_constant_override("outline_size", 4)
 	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	label.position.y = 16
+	label.position.y = PortHud.BAR_H + 6
 	layer.add_child(label)
 	add_child(layer)
 	get_tree().create_timer(NOTICE_SECONDS).timeout.connect(layer.queue_free)
@@ -143,6 +149,7 @@ func _say(line: String) -> void:
 
 
 func _sync() -> void:
+	hud.refresh()
 	var m := session.mode
 	if m == PortSession.Mode.CUTSCENE and director == null:
 		director = DialogueDirector.new()
@@ -158,7 +165,7 @@ func _sync() -> void:
 	var in_facility := is_in_facility()
 	if in_facility and facility_scene == null:
 		facility_scene = FacilityScene.new()
-		facility_scene.layer = 5  # 盖在港口 HUD(layer 1) 之上
+		facility_scene.layer = 5  # 盖在 PortHud(layer 1) 之上
 		facility_scene.setup(FacilityType.of(session.slot))
 		facility_scene.exit_requested.connect(leave)
 		facility_scene.menu_selected.connect(func(index: int, _label: String) -> void: choose(index))

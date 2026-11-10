@@ -2,7 +2,7 @@
 ##
 ## M0：按工程配置启动 → 主菜单可达（开始/退出按钮存在且已接线）→ 无错退出(0)。
 ## M2：从主菜单进入资料查看器，能从占位包成功打开至少 10 项图片。
-## 开场：开始按钮进灰盒里斯本，先演随包的开场剧情，逐句推进到底才轮到走路；之后换场景、读档都不重演。
+## 开场：开始按钮进灰盒里斯本，先演随包的开场剧情，逐句推进到底才轮到走路，HUD 显示港名/现金/目标与操作提示；之后换场景、读档都不重演。
 ## 港口：碰门进设施、退出；交易所买进再卖出；走进银行存款；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
 ## 航行：新开一局，里斯本买毛織品 → 港务局啟航 → 塞維利亞卖出，现金高于开局 → 走进塞維利亞的银行存款。
 ## 存读档（在塞維利亞）：选单存档 → 提款 → 读档回到存档时的局面；回到標題 →「繼續航程」接着存档玩，人还在塞維利亞。
@@ -110,6 +110,11 @@ func _intro(port: PortScene3D) -> bool:
 	if not await agent.act({"do": "walk", "dir": "down", "seconds": 0.2}):
 		push_error("开场演完走不动")
 		return false
+	var hud := port.doors.hud
+	if not (hud.hint_visible() and hud.status_text().contains(obs["port"]["name"]) and hud.status_text().contains(str(obs["gold"]))):
+		push_error("走路时 HUD 没有显示港名/现金或操作提示：%s" % hud.status_text())
+		return false
+	print("  HUD：%s｜%s" % [hud.status_text(), PortHud.HINT])
 	print("  开场：『%s』… 共 %d 句 → 走路；目標：%s" % [first["line"]["body"].replace("\n", " "), lines, obs["goal"]["text"]])
 	return true
 
