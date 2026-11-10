@@ -35,6 +35,7 @@ func test_every_category_and_item_is_fully_described() -> void:
 
 func test_live_items_resolve_to_their_actions() -> void:
 	assert_eq(GameMenu.action_of(INFO, 3), &"status", "主角情報")
+	assert_eq(GameMenu.action_of(INFO, 5), &"cargo", "貨物一覽")
 	assert_eq(GameMenu.action_of(SYSTEM, 3), &"title", "回到標題")
 	assert_eq(GameMenu.action_of(SYSTEM, 4), &"quit", "結束遊戲")
 

@@ -16,11 +16,11 @@ var _reveal := 0.0
 var _text: Control
 
 
-## 把字符串拆成逐字 "text" token。
+## 把字符串拆成逐字 "text" token，换行符拆成 "newline" token。
 static func text_tokens(s: String) -> Array:
 	var out: Array = []
 	for ch in s:
-		out.append({"type": "text", "ch": ch})
+		out.append({"type": "newline"} if ch == "\n" else {"type": "text", "ch": ch})
 	return out
 
 

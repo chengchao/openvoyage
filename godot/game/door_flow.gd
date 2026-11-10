@@ -1,5 +1,5 @@
 ## 进门流程的表现层：玩法状态全在 PortSession（sim）。玩家/agent 的动作转给 session，
-## 再由 _sync() 让界面（剧情对话 / 设施面板 / 金额输入 / 游戏内选单）与 session.mode 一致。
+## 再由 _sync() 让界面（剧情对话 / 设施面板 / 选货列表 / 金额输入 / 游戏内选单）与 session.mode 一致。
 class_name DoorFlow
 extends Node
 
@@ -9,6 +9,7 @@ const TITLE_SCENE := "res://game/main.tscn"
 var session := PortSession.new()
 var facility_scene: FacilityScene
 var director: DialogueDirector
+var goods_pick: GoodsPick
 var amount_entry: AmountEntry
 var game_menu: GameMenuPanel
 var last_said := ""  # 店主最近一句回话（供 agent 观察）
@@ -27,7 +28,7 @@ func inject_story(event_script: EventScript, state: GameState) -> void:
 
 
 func is_in_facility() -> bool:
-	return session.mode in [PortSession.Mode.FACILITY_MENU, PortSession.Mode.AMOUNT_ENTRY]
+	return session.mode in [PortSession.Mode.FACILITY_MENU, PortSession.Mode.GOODS_PICK, PortSession.Mode.AMOUNT_ENTRY]
 
 
 func is_in_cutscene() -> bool:
@@ -50,6 +51,16 @@ func choose(index: int) -> void:
 
 func leave() -> void:
 	if session.leave():
+		_sync()
+
+
+func pick(index: int) -> void:
+	if session.pick(index):
+		_sync()
+
+
+func cancel_pick() -> void:
+	if session.cancel_pick():
 		_sync()
 
 
@@ -120,10 +131,22 @@ func _sync() -> void:
 		facility_scene.queue_free()
 		facility_scene = null
 
+	var picking := m == PortSession.Mode.GOODS_PICK
+	if picking and goods_pick == null:
+		goods_pick = GoodsPick.new()
+		goods_pick.setup(session.pick_prompt, PackedStringArray(
+			session.pick_options.map(func(row: Dictionary) -> String: return row["label"])))
+		goods_pick.picked.connect(pick)
+		goods_pick.cancelled.connect(cancel_pick)
+		add_child(goods_pick)
+	elif not picking and goods_pick != null:
+		goods_pick.queue_free()
+		goods_pick = null
+
 	var entering := m == PortSession.Mode.AMOUNT_ENTRY
 	if entering and amount_entry == null:
 		amount_entry = AmountEntry.new()
-		amount_entry.setup(session.amount_prompt, session.amount_cap, 0)
+		amount_entry.setup(session.amount_prompt, session.amount_cap, 0, session.amount_step)
 		amount_entry.confirmed.connect(confirm_amount)
 		amount_entry.cancelled.connect(cancel_amount)
 		add_child(amount_entry)
@@ -131,7 +154,7 @@ func _sync() -> void:
 		amount_entry.queue_free()
 		amount_entry = null
 	if facility_scene != null:
-		facility_scene.set_process_unhandled_input(not entering)  # 金额输入时输入归模态
+		facility_scene.set_process_unhandled_input(not (picking or entering))  # 选货/金额输入时输入归模态
 
 	var in_menu := m == PortSession.Mode.GAME_MENU
 	if in_menu and game_menu == null:

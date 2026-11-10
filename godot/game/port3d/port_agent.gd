@@ -10,6 +10,7 @@ const MODE_NAMES := {
 	PortSession.Mode.FACILITY_MENU: "facility_menu",
 	PortSession.Mode.AMOUNT_ENTRY: "amount_entry",
 	PortSession.Mode.GAME_MENU: "game_menu",
+	PortSession.Mode.GOODS_PICK: "goods_pick",
 }
 
 var port: PortScene3D
@@ -35,6 +36,7 @@ func observe() -> Dictionary:
 		"doors": doors,
 		"gold": s.player_state.gold,
 		"bank": s.player_state.bank,
+		"cargo": s.player_state.cargo.duplicate(),
 		"said": flow.last_said,
 	}
 	if flow.facility_scene != null:
@@ -42,6 +44,9 @@ func observe() -> Dictionary:
 			"menu": Array(flow.facility_scene.menu_labels())}
 	if flow.director != null:
 		obs["line"] = flow.director.current_line()
+	if s.mode == PortSession.Mode.GOODS_PICK:
+		obs["pick"] = {"prompt": s.pick_prompt,
+			"options": s.pick_options.map(func(row: Dictionary) -> String: return row["label"])}
 	if s.mode == PortSession.Mode.AMOUNT_ENTRY:
 		obs["amount"] = {"prompt": s.amount_prompt, "cap": s.amount_cap}
 	var gm := flow.game_menu
@@ -53,7 +58,8 @@ func observe() -> Dictionary:
 
 ## 执行一个动作，合法且已执行返回 true。动作：
 ## {"do":"walk","dir":"up|down|left|right","seconds":s} {"do":"choose","index":i}（末项 = 離開）
-## {"do":"leave"} {"do":"amount","value":n} {"do":"cancel"} {"do":"next"}（剧情下一句）
+## {"do":"leave"} {"do":"pick","index":i}（选货） {"do":"amount","value":n}
+## {"do":"cancel"}（取消选货或金额输入） {"do":"next"}（剧情下一句）
 ## {"do":"menu"}（开游戏内选单） {"do":"menu_select","category":i,"item":j}（移光标） {"do":"close"}（关选单）
 func act(a: Dictionary) -> bool:
 	var flow := port.doors
@@ -83,15 +89,25 @@ func act(a: Dictionary) -> bool:
 				return false
 			flow.leave()
 			return true
+		"pick":
+			var i: int = a.get("index", -1)
+			if mode != PortSession.Mode.GOODS_PICK or i < 0 or i >= flow.session.pick_options.size():
+				return false
+			flow.pick(i)
+			return true
 		"amount":
 			if mode != PortSession.Mode.AMOUNT_ENTRY:
 				return false
 			flow.confirm_amount(int(a.get("value", -1)))
 			return flow.session.mode == PortSession.Mode.FACILITY_MENU
 		"cancel":
-			if mode != PortSession.Mode.AMOUNT_ENTRY:
-				return false
-			flow.cancel_amount()
+			match mode:
+				PortSession.Mode.GOODS_PICK:
+					flow.cancel_pick()
+				PortSession.Mode.AMOUNT_ENTRY:
+					flow.cancel_amount()
+				_:
+					return false
 			return true
 		"menu":
 			if mode != PortSession.Mode.WALKING:

@@ -1,6 +1,7 @@
 ## agent 只靠 observe()/act() 玩 HD-2D 港口（headless，不看画面）。
 extends GutTest
 
+const MARKET := 0
 const TAVERN := 1
 
 
@@ -101,3 +102,38 @@ func test_agent_opens_browses_and_closes_the_game_menu() -> void:
 
 	assert_true(await agent.act({"do": "close"}))
 	assert_eq(agent.observe()["mode"], "walking")
+
+
+func test_agent_trades_at_the_market() -> void:
+	var agent := _agent()
+	await wait_seconds(0.2)
+	assert_eq(agent.observe()["cargo"], {})
+	agent.port.doors.open(MARKET)
+	assert_false(await agent.act({"do": "pick", "index": 0}), "还没选买卖")
+	assert_true(await agent.act({"do": "choose", "index": 0}))
+	var obs := agent.observe()
+	assert_eq(obs["mode"], "goods_pick")
+	var good: Dictionary = Market.goods(0)[0]
+	assert_string_contains(obs["pick"]["options"][0], good["label"])
+	assert_false(await agent.act({"do": "pick", "index": obs["pick"]["options"].size()}), "越界被拒")
+	assert_true(await agent.act({"do": "pick", "index": 0}))
+	assert_eq(agent.observe()["mode"], "amount_entry")
+	assert_true(await agent.act({"do": "amount", "value": 4}))
+	obs = agent.observe()
+	assert_eq(obs["mode"], "facility_menu")
+	assert_eq(obs["cargo"], {good["key"]: 4})
+	assert_eq(obs["gold"], PortSession.STARTING_GOLD - 4 * good["buy"])
+	assert_ne(obs["said"], "")
+
+
+func test_agent_cancels_a_pick() -> void:
+	var agent := _agent()
+	await wait_seconds(0.2)
+	agent.port.doors.open(MARKET)
+	await agent.act({"do": "choose", "index": 1})
+	assert_eq(agent.observe()["mode"], "facility_menu", "没货可卖，留在菜单")
+	await agent.act({"do": "choose", "index": 0})
+	assert_true(await agent.act({"do": "cancel"}))
+	var obs := agent.observe()
+	assert_eq(obs["mode"], "facility_menu")
+	assert_false(obs.has("pick"))

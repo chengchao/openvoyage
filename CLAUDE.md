@@ -109,8 +109,15 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
 - [~] 游戏内选单（港里按 ESC 开/关）：内容表驱动——`godot/data/game_menu.json`
   （分类 情報/艦隊/隨身物/系統 仿原版指令分组，标题与说明自撰）→ sim 层 `GameMenu`；`PortSession.Mode.GAME_MENU`
   （只能从 WALKING 开、开着时不能进门/走动）+ `menu_detail`；表现层 `GameMenuPanel`（页签/项目/详情三栏 + 资金顶栏，键鼠皆可）。
-  agent：`menu` / `menu_select` / `close`，observe 带 `game_menu`。已实装 action：`status`（主角情報，详情栏显示港号与资金）、
+  agent：`menu` / `menu_select` / `close`，observe 带 `game_menu`。已实装 action：`status`（主角情報，详情栏显示港号与资金）、`cargo`（貨物一覽）、
   `title`（回到標題）、`quit`（結束遊戲）；其余项 action 为空 = 「尚未開放」（灰字），随各里程碑在表里填 action 并加分支。
+- [~] 交易所买卖（贸易的第一步，仅里斯本一港）：货物表 `godot/data/goods.json` + 港口表 `godot/data/ports.json`
+  （按港号列买进单价，卖出 = 九折去尾；没列价的货物该港不交易；名称与价格均自撰）→ sim 层 `Market`。
+  `PlayerState` 加 `cargo`（货物→件数）/ `hold`（船舱 100 件，占位）/ `buy` / `sell`。
+  `PortSession.Mode.GOODS_PICK`：採購/出售 → 选货（只列买得起、装得下 / 手上有的）→ 金额输入（件数，步长 1/10）→ 回菜单；
+  `confirm_amount` 按 `amount_action` match 分发；「查看行情」回多行价目（店主对话框只容 3 行 = 6 种货）。
+  表现层 `GoodsPick`（选货模态，键鼠皆可）；agent：`pick` / `cancel`，observe 带 `cargo` 与 `pick`。
+  游戏内选单「貨物一覽」已实装（action `cargo`）。冒烟含一次买进再卖出。待办：第二港与价差、出資入股、行情涨跌。
 - [ ] M6+：世界航海 / 贸易 / 战斗 / …（见 docs/koukai2-godot-plan.md §2）
 
 ## 逆向资料快速索引

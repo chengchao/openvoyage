@@ -6,7 +6,7 @@
       {"key": "crew", "label": "人物情報", "desc": "查看同行航海士的能力與現任職務。", "action": ""},
       {"key": "hero", "label": "主角情報", "desc": "查看主角目前的所在地與資金。", "action": "status"},
       {"key": "cargo", "label": "貨物情報", "desc": "查看各船載運的貨物與進貨價格。", "action": ""},
-      {"key": "cargo_list", "label": "貨物一覽", "desc": "把全艦隊的貨物彙整成一張清單。", "action": ""},
+      {"key": "cargo_list", "label": "貨物一覽", "desc": "把全艦隊的貨物彙整成一張清單。", "action": "cargo"},
       {"key": "discoveries", "label": "發現物", "desc": "回顧航行途中找到的發現物。", "action": ""},
       {"key": "chart", "label": "航海圖", "desc": "攤開已探明海域的航海圖。", "action": ""},
       {"key": "log", "label": "航海日誌", "desc": "翻閱至今為止的航海紀錄。", "action": ""},

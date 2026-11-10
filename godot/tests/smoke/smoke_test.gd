@@ -2,7 +2,7 @@
 ##
 ## M0：按工程配置启动 → 主菜单可达（开始/退出按钮存在且已接线）→ 无错退出(0)。
 ## M2：从主菜单进入资料查看器，能从占位包成功打开至少 10 项图片。
-## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
+## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；交易所买进再卖出；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
 ## 运行：godot --headless --path godot -s tests/smoke/smoke_test.gd
 extends SceneTree
 
@@ -71,6 +71,8 @@ func _smoke() -> bool:
 		return false
 	if not await _door(port):
 		return false
+	if not await _market(port):
+		return false
 	if not await _story_at_door(port):
 		return false
 	return await _game_menu(port)
@@ -78,9 +80,7 @@ func _smoke() -> bool:
 
 ## HD-2D 港口：主角朝一扇门走进去 → 进该门的设施 → 退出回到港口。
 func _door(port: PortScene3D) -> bool:
-	var door: PortDoor = port.find_children("*", "PortDoor", true, false)[0]
-	var front := door.global_position + door.global_basis.z * 1.5
-	port.player.global_position = Vector3(front.x, door.global_position.y - 0.9, front.z)
+	_stand_before(port, port.find_children("*", "PortDoor", true, false)[0])
 	if not await _push_into_door(port):
 		push_error("HD-2D 港口碰门未进设施")
 		return false
@@ -99,6 +99,47 @@ func _door(port: PortScene3D) -> bool:
 		return false
 	print("  HD-2D 港口：退出设施，回到港口")
 	return true
+
+
+func _stand_before(port: PortScene3D, door: PortDoor) -> void:
+	var front := door.global_position + door.global_basis.z * 1.5
+	port.player.global_position = Vector3(front.x, door.global_position.y - 0.9, front.z)
+
+
+## 交易所：走进门 → 採購 → 选货 → 件数 → 出售同一批 → 亏掉买卖价差 → 离开。
+func _market(port: PortScene3D) -> bool:
+	var agent := PortAgent.new(port)
+	for door: PortDoor in port.find_children("*", "PortDoor", true, false):
+		if FacilityType.of(door.slot).key == &"market":
+			_stand_before(port, door)
+	if not await _push_into_door(port) or agent.observe()["facility"]["name"] != FacilityType.of(0).name:
+		push_error("没能走进交易所")
+		return false
+	var good: Dictionary = Market.goods(port.port_id)[0]
+	var gold: int = agent.observe()["gold"]
+	if not (await agent.act({"do": "choose", "index": 0}) and await agent.act({"do": "pick", "index": 0})
+			and await agent.act({"do": "amount", "value": 3})):
+		push_error("交易所买进流程走不通：%s" % agent.observe())
+		return false
+	var obs := agent.observe()
+	if obs["cargo"] != {good["key"]: 3} or obs["gold"] != gold - 3 * good["buy"]:
+		push_error("买进后货物/现金有误：%s" % obs)
+		return false
+	print("  交易所：买进 3 件%s → %s" % [good["label"], obs["said"].replace("\n", " ")])
+	if not (await agent.act({"do": "choose", "index": 1}) and await agent.act({"do": "pick", "index": 0})
+			and await agent.act({"do": "amount", "value": 3})):
+		push_error("交易所卖出流程走不通：%s" % agent.observe())
+		return false
+	obs = agent.observe()
+	if obs["cargo"] != {} or obs["gold"] != gold - 3 * (good["buy"] - good["sell"]):
+		push_error("卖出后货物/现金有误：%s" % obs)
+		return false
+	print("  交易所：卖出 3 件%s → %s" % [good["label"], obs["said"].replace("\n", " ")])
+	if not await agent.act({"do": "leave"}):
+		return false
+	for _i in 10:
+		await physics_frame
+	return not port.doors.is_busy()
 
 
 func _push_into_door(port: PortScene3D) -> bool:

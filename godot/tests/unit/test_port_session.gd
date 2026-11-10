@@ -167,3 +167,163 @@ func test_menu_detail_marks_unopened_items() -> void:
 	assert_eq(s.menu_detail(1, 0), "%s\n%s" % [GameMenu.items(1)[0]["desc"], PortSession.NOT_OPEN_YET])
 	assert_eq(s.menu_detail(3, 3), GameMenu.items(3)[3]["desc"], "已开放的项只有说明")
 	assert_eq(s.menu_detail(0, 99), "")
+
+
+const MARKET := 0
+const BUY := 0
+const SELL := 1
+const PRICES := 3
+
+
+func _at_market(gold := PortSession.STARTING_GOLD) -> PortSession:
+	var s := PortSession.new()
+	s.player_state = PlayerState.new(gold, 0)
+	s.enter_door(MARKET)
+	return s
+
+
+func test_buying_goes_pick_then_amount_then_back_to_menu() -> void:
+	var s := _at_market()
+	var good: Dictionary = Market.goods(0)[0]
+	assert_eq(s.choose(BUY), "", "进入选货，无即时反馈")
+	assert_eq(s.mode, PortSession.Mode.GOODS_PICK)
+	assert_string_contains(s.pick_options[0]["label"], good["label"])
+	assert_string_contains(s.pick_options[0]["label"], str(good["buy"]), "选货行标出单价")
+	assert_true(s.pick(0))
+	assert_eq(s.mode, PortSession.Mode.AMOUNT_ENTRY)
+	var line := s.confirm_amount(5)
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+	assert_eq(s.player_state.gold, PortSession.STARTING_GOLD - 5 * good["buy"])
+	assert_eq(s.player_state.cargo, {good["key"]: 5})
+	assert_string_contains(line, good["label"], "店主报出成交")
+
+
+func test_buy_cap_is_what_the_gold_affords() -> void:
+	var good: Dictionary = Market.goods(0)[0]
+	var s := _at_market(good["buy"] * 3 + 1)
+	s.choose(BUY)
+	s.pick(0)
+	assert_eq(s.amount_cap, 3)
+	assert_eq(s.confirm_amount(4), "", "超过上限不成交")
+	assert_eq(s.player_state.cargo, {})
+
+
+func test_buy_cap_is_the_free_hold_when_gold_is_plentiful() -> void:
+	var s := _at_market(1000000)
+	s.player_state.cargo = {"pepper": 30}
+	s.choose(BUY)
+	s.pick(0)
+	assert_eq(s.amount_cap, s.player_state.hold - 30)
+
+
+func test_only_affordable_goods_are_offered() -> void:
+	var cheapest: Dictionary = Market.goods(0)[0]
+	for g: Dictionary in Market.goods(0):
+		if g["buy"] < cheapest["buy"]:
+			cheapest = g
+	var s := _at_market(cheapest["buy"])
+	s.choose(BUY)
+	assert_eq(s.pick_options.size(), 1)
+	assert_string_contains(s.pick_options[0]["label"], cheapest["label"])
+
+
+func test_buying_with_no_gold_or_no_room_gets_a_line_and_stays_in_menu() -> void:
+	var broke := _at_market(0)
+	assert_ne(broke.choose(BUY), "")
+	assert_eq(broke.mode, PortSession.Mode.FACILITY_MENU)
+	var full := _at_market()
+	full.player_state.cargo = {"pepper": full.player_state.hold}
+	assert_ne(full.choose(BUY), "")
+	assert_eq(full.mode, PortSession.Mode.FACILITY_MENU)
+
+
+func test_selling_offers_only_held_goods_and_caps_at_the_quantity() -> void:
+	var s := _at_market(0)
+	var good: Dictionary = Market.goods(0)[1]
+	s.player_state.cargo = {good["key"]: 7}
+	assert_eq(s.choose(SELL), "")
+	assert_eq(s.mode, PortSession.Mode.GOODS_PICK)
+	assert_eq(s.pick_options.size(), 1)
+	assert_string_contains(s.pick_options[0]["label"], good["label"])
+	assert_string_contains(s.pick_options[0]["label"], str(good["sell"]))
+	s.pick(0)
+	assert_eq(s.amount_cap, 7)
+	s.confirm_amount(7)
+	assert_eq(s.player_state.gold, 7 * good["sell"])
+	assert_eq(s.player_state.cargo, {})
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+
+
+func test_selling_with_nothing_the_port_trades_gets_a_line() -> void:
+	var s := _at_market()
+	assert_ne(s.choose(SELL), "", "船舱空")
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+	s.player_state.cargo = {"pepper": 3}
+	assert_ne(s.choose(SELL), "", "里斯本不收胡椒")
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+
+
+func test_buying_then_selling_in_the_same_port_loses_the_spread() -> void:
+	var s := _at_market()
+	var good: Dictionary = Market.goods(0)[0]
+	s.choose(BUY)
+	s.pick(0)
+	s.confirm_amount(10)
+	s.choose(SELL)
+	s.pick(0)
+	s.confirm_amount(10)
+	assert_eq(s.player_state.gold, PortSession.STARTING_GOLD - 10 * (good["buy"] - good["sell"]))
+
+
+func test_cancel_pick_returns_to_menu_without_trading() -> void:
+	var s := _at_market()
+	s.choose(BUY)
+	assert_true(s.cancel_pick())
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+	assert_eq(s.pick_options, [])
+	assert_eq(s.player_state.gold, PortSession.STARTING_GOLD)
+
+
+func test_cancel_amount_after_pick_trades_nothing() -> void:
+	var s := _at_market()
+	s.choose(BUY)
+	s.pick(0)
+	assert_true(s.cancel_amount())
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+	assert_eq(s.player_state.cargo, {})
+
+
+func test_pick_is_refused_out_of_range_or_out_of_mode() -> void:
+	var s := _at_market()
+	assert_false(s.pick(0), "还没选买卖")
+	assert_false(s.cancel_pick())
+	s.choose(BUY)
+	assert_false(s.pick(-1))
+	assert_false(s.pick(s.pick_options.size()))
+	assert_eq(s.mode, PortSession.Mode.GOODS_PICK)
+	assert_false(s.leave(), "选货时不能直接离开设施")
+	assert_eq(s.choose(SELL), "", "选货时菜单不响应")
+	assert_eq(s.mode, PortSession.Mode.GOODS_PICK)
+
+
+func test_show_prices_lists_every_good_the_port_trades() -> void:
+	var s := _at_market()
+	var line := s.choose(PRICES)
+	for g: Dictionary in Market.goods(0):
+		assert_string_contains(line, g["label"])
+		assert_string_contains(line, str(g["buy"]))
+		assert_string_contains(line, str(g["sell"]))
+	assert_gt(line.split("\n").size(), 1, "多行")
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+
+
+func test_menu_detail_for_cargo_lists_what_is_held() -> void:
+	var s := PortSession.new()
+	var empty := s.menu_detail(0, 5)
+	assert_false(empty.contains(PortSession.NOT_OPEN_YET), "貨物一覽已开放")
+	var good: Dictionary = Market.goods(0)[0]
+	s.player_state.cargo = {good["key"]: 12}
+	var detail := s.menu_detail(0, 5)
+	assert_string_contains(detail, good["label"])
+	assert_string_contains(detail, "12")
+	assert_ne(detail, empty)
