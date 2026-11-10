@@ -1,0 +1,11 @@
+{
+  "_doc": "货物表（自撰）：key=稳定英文标识，label=显示名。哪个港买卖哪些货、什么价，见 ports.json 的 prices。",
+  "goods": [
+    {"key": "wine", "label": "葡萄酒"},
+    {"key": "olive_oil", "label": "橄欖油"},
+    {"key": "salt", "label": "食鹽"},
+    {"key": "woolens", "label": "毛織品"},
+    {"key": "sugar", "label": "砂糖"},
+    {"key": "pepper", "label": "胡椒"}
+  ]
+}

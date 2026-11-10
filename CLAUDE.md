@@ -40,7 +40,7 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   **已整体放弃原档兼容**：原版档与转换产物只供开发者参照，不是游戏的输入，也不做「玩家导入原档」功能。新代码不得读 `assets-converted/`。
   设施菜单标签与店主招呼已自撰（`godot/data/facility_actions.json` 的 `label` / `greetings`，由 `FacilityActions` 解析）；
   游戏代码里读转换产物的路径（TextDb / MesText / FontCodec / EventScript.load / 字模图集）已于 2026-11-09 删除。
-  下文「当前状态」里提到这些类与「真 MENU / MESSAGE.DAT 台词」之处是历史记录。待办：自撰开场剧情（EventScript 现在只能由代码注入，尚无随包剧本）。
+  下文「当前状态」里提到这些类与「真 MENU / MESSAGE.DAT 台词」之处是历史记录。自撰开场剧情已随包（2026-11-09，`godot/data/story/main.json`，见「当前状态」的随包剧本一条）。
 - 依赖原版档的测试标记 skip-if-missing。
 
 ## 当前状态
@@ -105,12 +105,48 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   gui-input-mouse-filter，违规须修或同行 `# lint-allow: <id>` 写明理由）。
   关卡几何 lint 写在 `tests/unit/test_lint_ports.gd`（每个 ports/*.tscn 从 Spawn 用主角胶囊洪泛：
   port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到）。
-  待办：港内 NPC（旧 2D 的 NpcCrowd 已随网格港删除，需按 3D 重做）+ HUD；主角像素走路动画；Departure 接世界航海。
+  里斯本现有八扇门：交易所/酒馆/港务局/造船所（码头一排）、教会/王宫/行会（台地）、银行（槽 8，广场东侧，门朝西——从广场往东走进去）。
+  塞維利亞（港 1，河港：广场北排交易所/酒馆/港务局、西侧银行门朝东、东岸栈桥出航）是第二座港。
+  待办：港内 NPC（旧 2D 的 NpcCrowd 已随网格港删除，需按 3D 重做）；主角像素走路动画。
 - [~] 游戏内选单（港里按 ESC 开/关）：内容表驱动——`godot/data/game_menu.json`
   （分类 情報/艦隊/隨身物/系統 仿原版指令分组，标题与说明自撰）→ sim 层 `GameMenu`；`PortSession.Mode.GAME_MENU`
   （只能从 WALKING 开、开着时不能进门/走动）+ `menu_detail`；表现层 `GameMenuPanel`（页签/项目/详情三栏 + 资金顶栏，键鼠皆可）。
-  agent：`menu` / `menu_select` / `close`，observe 带 `game_menu`。已实装 action：`status`（主角情報，详情栏显示港号与资金）、
+  agent：`menu` / `menu_select` / `menu_activate`（选定光标项）/ `close`，observe 带 `game_menu` 与 `day`。已实装 action：
+  `status`（主角情報，详情栏显示港名、第几日与资金）、`cargo`（貨物一覽）、`save`（儲存進度）、`load`（讀取進度）、
   `title`（回到標題）、`quit`（結束遊戲）；其余项 action 为空 = 「尚未開放」（灰字），随各里程碑在表里填 action 并加分支。
+- [x] 存读档 + 跨场景状态：sim 层 `World`（player/story/port_id/day；`World.current` 跨场景存活，`new_game()` 开新局）是
+  唯一的可存档状态，`PortSession` 只是在某个 world 上玩（`player_state`/`game_state`/`port_id` 都是 world 的视图）；
+  `PortScene3D._ready` 把会话绑到 `World.current` 并写入所在港。`SaveFile` 存取 `user://save.json`（带 `version`，
+  先写临时文件再改名）；`World.from_dict` 是信任边界——缺字段/类型不对/未知港一律整档拒收返回 null。
+  主菜单「開始遊戲」= `World.new_game()`、「繼續航程」读档进港（存档读不出来则禁用）；进港统一走 `PortScene3D.enter`，
+  港口场景路径只在 `data/ports.json`（`Market.port_scene`）。测试存档一律写 `user://test_tmp/`，不碰真存档。
+  待办：`EventScript` 不在存档里（等随包剧本）。
+- [~] 交易所买卖（贸易的第一步）：货物表 `godot/data/goods.json` + 港口表 `godot/data/ports.json`
+  （按港号列买进单价，卖出 = 九折去尾；没列价的货物该港不交易；名称与价格均自撰）→ sim 层 `Market`。
+  `PlayerState` 加 `cargo`（货物→件数）/ `hold`（船舱 100 件，占位）/ `buy` / `sell`。
+  `PortSession.Mode.PICK`（通用单选步骤，货物与出航目的地共用）：採購/出售 → 选货（只列买得起、装得下 / 手上有的）→
+  金额输入（件数，步长 1/10）→ 回菜单；`pick` / `confirm_amount` 按 `pending_action` 分发；「查看行情」回多行价目（店主对话框只容 3 行 = 6 种货）。
+  表现层 `PickList`（单选列表模态，键鼠皆可）；agent：`pick` / `cancel`，observe 带 `cargo` 与 `pick`。
+  游戏内选单「貨物一覽」已实装（action `cargo`）。两港六种货都有标价（`test_market` 断言：双向各至少两种货有赚头、买得到的货对岸都收）。
+  待办：出資入股、行情涨跌。
+- [~] 直达航行（核心循环：低买 → 航行 → 高卖）：`ports.json` 每港带 `routes: [{to, days}]`（`Market.routes`）。
+  港务局「啟航出海」（`set_sail`）或走进 `Departure` 出航区（`PortSession.open_departure`，取消回到走路）→ 单选目的地 →
+  `world.day += days`、`world.port_id = 目的港`、`world.notice` = 抵港通知（不进存档，下个港口场景显示几秒并清空）→
+  `Mode.SAILED`（终态，本会话不再接受任何动作）；`DoorFlow.pick` 见到 SAILED 就调 `enter_port`（默认 `PortScene3D.enter`，
+  测试注入假函数以免换掉 GUT 的场景）。agent：observe 带 `port {id, name}`，启航后旧 port 被释放，用 `PortAgent.current(tree)` 取新港。
+  冒烟：里斯本买毛織品 → 啟航 → 塞維利亞卖出现金高于开局 → 在塞維利亞存档/读档/繼續航程。
+  航行目前免费、瞬间到达。待办：世界地图航海、补给与水手、海上事件。
+- [~] 随包剧本与目标：`godot/data/story/main.json`（自撰，EventScript 命令表格式 + `names` / `goal` / `words`），
+  `EventScript.load_shipped()` 读取；`World.new_game()` 与读档都挂上它（`World.story_script`，内容不进存档，旗标进存档）。
+  自撰剧本用 `set_flag` 操作码立旗标（逆向来的 `set` 仍是记日志的 no-op）；`EventInterpreter.has_content()` 让
+  「旗标挡掉、一句不演」的剧情不开对话。抵港剧情 = 事件码 `PortSession.ARRIVAL`(0x10)：`PortSession.arrive()`
+  WALKING → CUTSCENE → WALKING（开场只演一次，旗标 0）。目标「現金加存款達到 10000」在 `World.goal()`
+  （达成即立旗标 1，之后花掉也算）；达成后进里斯本王宫演一次道贺（旗标 2），游戏照常继续。
+  主角情報与 `PortAgent.observe()["goal"]` 都显示目标与进度。
+- [~] 港口 HUD 与主菜单：`PortHud`（CanvasLayer layer 1，由 DoorFlow 持有，`_sync()` 时 refresh）——顶上一条
+  港名/日期/现金/船舱/目标进度（游戏内选单开着时让位），底下一行操作提示只在走路时显示；抵港通知排在这条下面。
+  主菜单全繁体（開始遊戲/繼續航程/結束遊戲）+ 标题 + 版本号（`project.godot` 的 `config/version`）；
+  資料檢視器是开发工具，只在 `OS.is_debug_build()` 时显示按钮（`MainMenu.debug_tools` 可注入）。
 - [ ] M6+：世界航海 / 贸易 / 战斗 / …（见 docs/koukai2-godot-plan.md §2）
 
 ## 逆向资料快速索引

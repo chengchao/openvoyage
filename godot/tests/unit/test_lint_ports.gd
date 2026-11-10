@@ -178,7 +178,8 @@ func test_every_port_scene_is_lint_clean() -> void:
 		if not f.ends_with(".tscn"):
 			continue
 		var port: PortScene3D = load(PORTS_DIR + f).instantiate()
-		add_child_autofree(port)
+		add_child(port)
 		await wait_frames(3)
 		found.append_array(violations(port, PORTS_DIR + f))
+		port.free()  # 各港共用一个物理空间：留着上一座，下一座会踩到它的地面上
 	assert_eq(found.size(), 0, "\n".join(found))

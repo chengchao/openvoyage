@@ -1,0 +1,88 @@
+name: Export
+
+# 导出模板约 1 GB，不放进每次 push 的门禁：只在打 v* 标签、手动触发、或 PR 改到导出配置时跑。
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - godot/export_presets.cfg
+      - godot/project.godot
+      - .github/workflows/export.yml
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    name: 导出 Windows / Linux / macOS
+    runs-on: ubuntu-22.04
+    env:
+      GODOT_VERSION: "4.3"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 缓存 Godot 与导出模板
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-stable-export
+
+      - name: 下载 Godot 与导出模板
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot-bin ~/.local/share/godot/export_templates
+          wget -q "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O godot.zip
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" ~/godot-bin/godot
+          wget -q "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -O templates.zip
+          unzip -q templates.zip
+          mv templates ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+
+      - name: 导入资源（跑两遍以生成缓存）
+        run: |
+          chmod +x ~/godot-bin/godot
+          ~/godot-bin/godot --headless --path godot --import || true
+          ~/godot-bin/godot --headless --path godot --import
+
+      - name: 导出三个平台
+        run: |
+          set -e
+          mkdir -p build/windows build/linux build/macos
+          ~/godot-bin/godot --headless --path godot --export-release "Windows Desktop" "$PWD/build/windows/OpenVoyage.exe"
+          ~/godot-bin/godot --headless --path godot --export-release "Linux" "$PWD/build/linux/OpenVoyage.x86_64"
+          ~/godot-bin/godot --headless --path godot --export-release "macOS" "$PWD/build/macos/OpenVoyage-macos.zip"
+          test -s build/windows/OpenVoyage.exe
+          test -s build/linux/OpenVoyage.x86_64
+          test -s build/macos/OpenVoyage-macos.zip
+
+      - name: 导出的 Linux 包能启动（headless 跑 120 帧，无脚本错误）
+        run: |
+          set -e
+          chmod +x build/linux/OpenVoyage.x86_64
+          build/linux/OpenVoyage.x86_64 --headless --quit-after 120 2>&1 | tee boot.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load" boot.log
+
+      - name: 打包
+        run: |
+          cd build
+          (cd windows && zip -q ../OpenVoyage-windows.zip OpenVoyage.exe)
+          (cd linux && zip -q ../OpenVoyage-linux.zip OpenVoyage.x86_64)
+          mv macos/OpenVoyage-macos.zip .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenVoyage-builds
+          path: build/OpenVoyage-*.zip
+
+      - name: 发布到 GitHub Release（仅标签）
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" build/OpenVoyage-*.zip --generate-notes

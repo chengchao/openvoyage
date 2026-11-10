@@ -1,23 +1,34 @@
 ## 事件脚本程序（纯逻辑数据 + 查找，headless 可测）。
-## 数据 = 带标签的命令表脚本 + 触发入口表（events 字典）与台词列表（say 的 id 'snrN/k' 即行下标）。
+## 数据 = 带标签的命令表脚本 + 触发入口表（events 字典）与台词列表（say 的 id 'snrN/k' 即行下标；可另给，也可放在 events["words"]）。
 ## 控制流/语义在 EventInterpreter；此处只做章节脚本取用、标签→下标、入口查找、台词解析。
 class_name EventScript
 extends RefCounted
 
+const STORY_PATH := "res://data/story/main.json"
 const NAME_OPEN := "〔"
 const NAME_CLOSE := "〕"
 
 var scenario: int = 0
 var chapters: Array = []
 var words: PackedStringArray = PackedStringArray()
+var names: Dictionary = {}    # $ 占位符的开局值（"n" = 主角名）
+var goal: Dictionary = {}     # 本局目标 {text, target, met_flag}；没有 = 无目标
 var _label_maps: Array = []   # 每章 {label:String -> index:int}，懒构建
 
 
 func _init(events: Dictionary = {}, words_: PackedStringArray = PackedStringArray()) -> void:
 	scenario = int(events.get("scenario", 0))
 	chapters = events.get("chapters", [])
-	words = words_
+	words = words_ if not words_.is_empty() else PackedStringArray(events.get("words", []))
+	names = events.get("names", {})
+	goal = events.get("goal", {})
 	_label_maps.resize(chapters.size())
+
+
+## 随包的自撰剧本（台词也在同一份文件里）；读不出来返回 null。
+static func load_shipped() -> EventScript:
+	var doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(STORY_PATH))
+	return EventScript.new(doc) if typeof(doc) == TYPE_DICTIONARY else null
 
 
 func chapter_count() -> int:

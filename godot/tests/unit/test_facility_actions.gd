@@ -8,13 +8,13 @@ func before_each() -> void:
 
 
 func test_bank_items_resolve_to_money_actions() -> void:
-	assert_eq(FacilityActions.action_of(&"bank", 0), &"deposit", "银行项0→deposit")
-	assert_eq(FacilityActions.action_of(&"bank", 1), &"withdraw", "银行项1→withdraw")
+	assert_eq(FacilityActions.action_of(&"bank", 0), &"deposit", "銀行项0→deposit")
+	assert_eq(FacilityActions.action_of(&"bank", 1), &"withdraw", "銀行项1→withdraw")
 
 
 func test_other_facilities_resolve_to_their_actions() -> void:
 	assert_eq(FacilityActions.action_of(&"market", 0), &"buy_goods", "交易所项0→buy_goods")
-	assert_eq(FacilityActions.action_of(&"tavern", 0), &"hire_sailor", "酒馆项0=水手僱用→hire_sailor")
+	assert_eq(FacilityActions.action_of(&"tavern", 0), &"hire_sailor", "酒館项0=水手僱用→hire_sailor")
 
 
 func test_unknown_facility_or_item_returns_empty() -> void:

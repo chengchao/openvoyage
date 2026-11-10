@@ -19,34 +19,59 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -140.0
-offset_top = -90.0
+offset_top = -125.0
 offset_right = 140.0
-offset_bottom = 90.0
+offset_bottom = 125.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 16
 
 [node name="Title" type="Label" parent="VBox"]
+unique_name_in_owner = true
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "OpenVoyage"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="VBox"]
 layout_mode = 2
-text = "大航海题材开源引擎"
+text = "大航海時代的海上貿易"
 horizontal_alignment = 1
 
 [node name="StartButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "开始 / Start"
+text = "開始遊戲"
+
+[node name="ContinueButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "繼續航程"
 
 [node name="ViewButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "资料查看器 / Asset Viewer"
+text = "資料檢視器（開發用）"
 
 [node name="QuitButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "退出 / Quit"
+text = "結束遊戲"
+
+[node name="Version" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -128.0
+offset_top = -28.0
+offset_right = -8.0
+offset_bottom = -6.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 2
+vertical_alignment = 2

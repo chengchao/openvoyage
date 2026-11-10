@@ -121,3 +121,18 @@ func test_clicking_a_tab_selects_it_and_clicking_an_item_activates_it() -> void:
 	_click(p, "回到標題")
 	assert_eq(p.item_index(), 3)
 	assert_signal_emitted_with_parameters(p, "action_requested", [&"title"])
+
+
+func test_activating_save_shows_the_confirmation_at_once() -> void:
+	var path := "user://test_tmp/game_menu_panel.json"
+	var s := PortSession.new()
+	s.save_path = path
+	var p := _panel(s)
+	p.action_requested.connect(func(action: StringName) -> void:
+		if action == &"save":
+			s.save_game())
+	p.move_category(SYSTEM)
+	p.move_item(1)
+	p.activate()
+	assert_string_contains(p._detail.text, "進度已儲存", "详情栏在选定后立即刷新")
+	DirAccess.remove_absolute(path)

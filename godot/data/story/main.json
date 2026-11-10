@@ -1,0 +1,70 @@
+{
+  "_doc": "随包剧本（自撰，人物与情节皆原创）。格式同 EventScript 命令表：entries 的 trigger_id =（港号<<8 | 事件码），事件码 0..0x0B 是设施槽、0x10 是抵港（PortSession.ARRIVAL）；say 的 text 'main/k' 取 words[k]；names 是 $ 占位符的开局值；goal 是本局目标（target = 现金加存款，达成时 World 立起 met_flag）。旗标：0 = 开场已演，1 = 目标已达成，2 = 王宫已道贺。",
+  "scenario": 1,
+  "names": {"n": "瑪琳娜"},
+  "goal": {"text": "現金加存款達到 10000 金幣", "target": 10000, "met_flag": 1},
+  "chapters": [
+    {
+      "index": 0,
+      "entries": [
+        {"trigger_id": "0010", "label": "intro"},
+        {"trigger_id": "0005", "label": "palace"}
+      ],
+      "script": [
+        {"label": "intro"},
+        {"op": "branch", "if": "set", "flag": 0, "to": "done"},
+        {"op": "set_flag", "flag": 0},
+        {"op": "window"},
+        {"op": "say", "text": "main/0"}, {"op": "wait"},
+        {"op": "portrait", "kao": 2},
+        {"op": "say", "text": "main/1"}, {"op": "wait"},
+        {"op": "portrait", "kao": 0},
+        {"op": "say", "text": "main/2"}, {"op": "wait"},
+        {"op": "portrait", "kao": 2},
+        {"op": "say", "text": "main/3"}, {"op": "wait"},
+        {"op": "say", "text": "main/4"}, {"op": "wait"},
+        {"op": "say", "text": "main/5"}, {"op": "wait"},
+        {"op": "say", "text": "main/6"}, {"op": "wait"},
+        {"op": "portrait", "kao": 0},
+        {"op": "say", "text": "main/7"}, {"op": "wait"},
+        {"op": "portrait", "kao": 2},
+        {"op": "say", "text": "main/8"}, {"op": "wait"},
+        {"op": "portrait", "kao": 0},
+        {"op": "say", "text": "main/9"}, {"op": "wait"},
+        {"op": "end"},
+
+        {"label": "palace"},
+        {"op": "branch", "if": "clear", "flag": 1, "to": "done"},
+        {"op": "branch", "if": "set", "flag": 2, "to": "done"},
+        {"op": "set_flag", "flag": 2},
+        {"op": "window"},
+        {"op": "portrait", "kao": 4},
+        {"op": "say", "text": "main/10"}, {"op": "wait"},
+        {"op": "say", "text": "main/11"}, {"op": "wait"},
+        {"op": "portrait", "kao": 0},
+        {"op": "say", "text": "main/12"}, {"op": "wait"},
+        {"op": "portrait", "kao": -1},
+        {"op": "say", "text": "main/13"}, {"op": "wait"},
+
+        {"label": "done"},
+        {"op": "end"}
+      ]
+    }
+  ],
+  "words": [
+    "里斯本的清晨，碼頭上的霧還沒散。\n$n用多年攢下的積蓄，買下了一艘舊的小帆船。",
+    "〔伊內絲〕\n$n！聽說你真的把那艘船買下來了？",
+    "〔$n〕\n是啊，伊內絲。錢袋裡只剩 2000 金幣，\n不過從今天起，我就是船主了。",
+    "〔伊內絲〕\n我在商行記了三十年的帳，只教你一件事：\n便宜的地方買，貴的地方賣。",
+    "〔伊內絲〕\n里斯本的毛織品和砂糖便宜，運到塞維利亞能賣好價錢；\n那邊的葡萄酒、橄欖油和胡椒，載回來同樣有賺頭。",
+    "〔伊內絲〕\n先到交易所進貨，再去港務局啟航。\n四天的航程，一來一回，錢就滾起來了。",
+    "〔伊內絲〕\n用不到的錢可以存進銀行。\n等現金加存款滿 10000 金幣，就到王宮去一趟。",
+    "〔$n〕\n王宮？",
+    "〔伊內絲〕\n王室正在找有本事的商人，發給海外貿易的特許狀。\n10000 金幣，就是他們要看的本事。",
+    "〔$n〕\n10000 金幣……好，我記住了。出發吧！",
+    "〔王室書記官〕\n$n船長，你的帳目我們看過了。\n現金加存款超過 10000 金幣，名不虛傳。",
+    "〔王室書記官〕\n奉國王陛下之命，授予你海外貿易特許狀。",
+    "〔$n〕\n（伊內絲，我做到了。）",
+    "目標達成！\n航程還可以繼續——更遠的海域，留待日後開拓。"
+  ]
+}

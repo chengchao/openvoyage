@@ -1,10 +1,9 @@
 ## HD-2D 港口场景根。港口本身在编辑器里手工摆（ports/*.tscn），本脚本只做契约：
-## Spawn 放主角、朝 PortDoor 走进去时走进门流程（DoorFlow）、Departure 报出航、镜头以固定斜角跟随。
+## Spawn 放主角、朝 PortDoor 走进去时走进门流程（DoorFlow）、走进 Departure 问去哪座港、镜头以固定斜角跟随。
 class_name PortScene3D
 extends Node3D
 
 signal door_entered(slot: int)
-signal departure_entered
 
 ## 港号（SNR 事件键高字节；里斯本 = 0）。
 @export var port_id := 0
@@ -22,17 +21,30 @@ var doors := DoorFlow.new()
 @onready var _camera: Camera3D = $Camera3D
 
 
+## 让 world 成为当前世界，并切到它所在港的场景。
+static func enter(tree: SceneTree, world: World) -> void:
+	World.current = world
+	tree.change_scene_to_file(Market.port_scene(world.port_id))
+
+
 func _ready() -> void:
 	player = Avatar3D.new()
 	player.name = "Player"
 	add_child(player)
 	player.global_position = ($Spawn as Marker3D).global_position
+	if World.current == null:
+		World.new_game()  # 直接运行港口场景（编辑器 F6、测试）时没有主菜单替它开局
+	doors.session.world = World.current
 	doors.port_id = port_id
 	add_child(doors)
 	_doors.assign(find_children("*", "PortDoor", true, false))
 	($Departure as Area3D).body_entered.connect(func(body: Node3D) -> void:
 		if body == player:
-			departure_entered.emit())
+			doors.open_departure())
+	var notice := World.current.take_notice()
+	if notice != "":
+		doors.announce(notice)
+	doors.arrive()
 	_camera.global_position = _camera_target()
 	_camera.look_at(player.global_position + Vector3.UP)
 

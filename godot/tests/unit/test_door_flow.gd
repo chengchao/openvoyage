@@ -1,6 +1,7 @@
 ## 进门流程：剧情优先 → 设施 → 银行存取（与港口渲染方式无关）。
 extends GutTest
 
+const MARKET := 0
 const TAVERN := 1
 const BANK := 8
 
@@ -84,7 +85,7 @@ func test_bank_deposit_moves_gold_to_bank() -> void:
 	assert_not_null(f.amount_entry, "存款应弹金额输入")
 	f.amount_entry.adjust(AmountEntry.STEP_BIG)
 	f.amount_entry.confirm()
-	assert_eq(f.player_state.gold, DoorFlow.STARTING_GOLD - 1000)
+	assert_eq(f.player_state.gold, World.STARTING_GOLD - 1000)
 	assert_eq(f.player_state.bank, 1000)
 	assert_null(f.amount_entry, "确认后金额模态关闭")
 
@@ -105,15 +106,52 @@ func test_bank_cancel_leaves_funds_unchanged() -> void:
 	f.facility_scene.menu_selected.emit(0, "存款")
 	f.amount_entry.adjust(AmountEntry.STEP_BIG)
 	f.amount_entry.cancel()
-	assert_eq(f.player_state.gold, DoorFlow.STARTING_GOLD, "取消不动钱")
+	assert_eq(f.player_state.gold, World.STARTING_GOLD, "取消不动钱")
 	assert_null(f.amount_entry)
 
 
 func test_unimplemented_menu_item_says_not_open_yet() -> void:
 	var f := _inside(TAVERN)
 	f.facility_scene.menu_selected.emit(0, "賭博")
-	assert_null(f.amount_entry, "非银行不弹金额输入")
+	assert_null(f.amount_entry, "非銀行不弹金额输入")
 	assert_true(f.facility_scene.has_dialogue(), "以一句反馈占位")
+
+
+func test_market_buy_goes_through_pick_list_and_amount() -> void:
+	var f := _inside(MARKET)
+	var good: Dictionary = Market.goods(0)[0]
+	f.facility_scene.menu_selected.emit(0, "採購貨物")
+	assert_not_null(f.pick_list, "採購应弹选货列表")
+	assert_null(f.amount_entry)
+	f.pick_list.confirm()
+	assert_null(f.pick_list, "选定后选货列表关闭")
+	assert_not_null(f.amount_entry, "接着输入数量")
+	_press("ui_up")
+	assert_eq(f.amount_entry.amount(), 1, "货物按件数调，不是按百")
+	_press("ui_right")
+	assert_eq(f.amount_entry.amount(), 11)
+	f.amount_entry.confirm()
+	assert_eq(f.player_state.cargo, {good["key"]: 11})
+	assert_eq(f.player_state.gold, World.STARTING_GOLD - 11 * good["buy"])
+	assert_true(f.facility_scene.has_dialogue(), "店主报出成交")
+
+
+func test_escape_in_pick_list_returns_to_facility_menu() -> void:
+	var f := _inside(MARKET)
+	f.facility_scene.menu_selected.emit(0, "採購貨物")
+	_press("ui_cancel")
+	assert_null(f.pick_list)
+	assert_true(f.is_in_facility(), "ESC 只关选货列表，不离开设施")
+	assert_null(f.game_menu)
+
+
+func test_keys_in_pick_list_do_not_move_the_facility_menu() -> void:
+	var f := _inside(MARKET)
+	f.facility_scene.menu_selected.emit(0, "採購貨物")
+	var before := f.facility_scene.selected_index()
+	_press("ui_down")
+	assert_eq(f.pick_list.selected_index(), 1)
+	assert_eq(f.facility_scene.selected_index(), before)
 
 
 func _press(action: String) -> void:
@@ -169,3 +207,76 @@ func test_unopened_menu_item_keeps_menu_open() -> void:
 	assert_not_null(f.game_menu)
 	f.close_menu()
 	assert_null(f.game_menu)
+
+
+func test_saving_from_the_game_menu_writes_the_save_file() -> void:
+	var path := "user://test_tmp/door_flow.json"
+	DirAccess.remove_absolute(path)
+	var f := _flow()
+	f.session.save_path = path
+	f.player_state.deposit(400)
+	f.open_menu()
+	f.game_menu.move_category(3)
+	f.game_menu.move_item(1)
+	_press("ui_accept")
+	assert_eq(SaveFile.load(path).player.bank, 400)
+	assert_string_contains(f.game_menu.detail_text(), "進度已儲存")
+	DirAccess.remove_absolute(path)
+
+
+func test_loading_with_no_save_stays_in_the_menu_and_says_so() -> void:
+	var path := "user://test_tmp/door_flow.json"
+	DirAccess.remove_absolute(path)
+	var f := _flow()
+	f.session.save_path = path
+	f.open_menu()
+	f.game_menu.move_category(3)
+	f.game_menu.move_item(2)
+	_press("ui_accept")
+	assert_not_null(f.game_menu, "没有存档：留在选单")
+	assert_string_contains(f.game_menu.detail_text(), "還沒有存檔")
+
+
+func test_sailing_asks_to_enter_the_destination_port() -> void:
+	var entered: Array[World] = []
+	var f := _inside(3)
+	f.enter_port = func(_tree: SceneTree, w: World) -> void: entered.append(w)
+	f.facility_scene.menu_selected.emit(0, "啟航出海")
+	assert_not_null(f.pick_list, "啟航先选目的地")
+	f.pick_list.confirm()
+	assert_eq(entered, [f.session.world])
+	assert_eq(f.session.world.port_id, 1)
+	assert_true(f.is_busy(), "等换场景期间主角不动")
+
+
+func test_escape_in_a_destination_pick_opened_while_walking_returns_to_walking() -> void:
+	var f := _flow()
+	f.open_departure()
+	assert_not_null(f.pick_list)
+	assert_null(f.facility_scene, "不在设施里")
+	_press("ui_cancel")
+	assert_null(f.pick_list)
+	assert_false(f.is_busy())
+	assert_null(f.game_menu, "同一下 ESC 不会顺手开选单")
+
+
+func test_arrival_notice_is_shown_and_observable() -> void:
+	var f := _flow()
+	f.announce("航行 4 日，抵達塞維利亞。")
+	assert_eq(f.last_said, "航行 4 日，抵達塞維利亞。")
+
+
+func test_arrival_story_plays_then_returns_to_walking_without_a_facility() -> void:
+	var f := _flow()
+	f.session.world = World.new_game()
+	World.current = null
+	f.arrive()
+	assert_true(f.is_in_cutscene())
+	assert_ne(f.director.current_line()["body"], "")
+	for _i in 20:
+		if f.is_in_cutscene():
+			f.director.advance()
+	assert_false(f.is_busy(), "开场演完回到走路")
+	assert_null(f.facility_scene)
+	f.arrive()
+	assert_false(f.is_busy(), "再次抵港不重演")

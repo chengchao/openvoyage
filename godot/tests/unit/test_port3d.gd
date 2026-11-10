@@ -4,6 +4,10 @@ extends GutTest
 const PORTS_DIR := "res://game/port3d/ports/"
 
 
+func before_each() -> void:
+	World.current = World.new()  # 没有剧本的一局：进港即可走，不先演开场
+
+
 func _port_paths() -> PackedStringArray:
 	var out := PackedStringArray()
 	for f in DirAccess.get_files_at(PORTS_DIR):
@@ -37,6 +41,11 @@ func test_every_port_meets_the_contract() -> void:
 			slots[d.slot] = true
 		assert_gt(slots.size(), 0, "%s 至少一扇门" % path)
 		root.free()
+
+
+func test_lisbon_has_a_bank_door() -> void:
+	var slots := _doors(_lisbon()).map(func(d: PortDoor) -> int: return d.slot)
+	assert_has(slots, 8, "存取款只在銀行（槽 8）能做，里斯本得有这扇门")
 
 
 func test_player_spawns_at_spawn_marker() -> void:
@@ -144,3 +153,37 @@ func test_leaving_a_facility_stays_in_the_port() -> void:
 	s.doors.facility_scene._request_exit()
 	await wait_seconds(0.3)
 	assert_false(s.doors.is_in_facility(), "离开设施后留在港口，不会被门立刻再拉回去")
+
+
+func test_seville_has_market_harbor_and_bank_doors() -> void:
+	var s: PortScene3D = load(PORTS_DIR + "seville.tscn").instantiate()
+	add_child_autofree(s)
+	assert_eq(s.port_id, 1)
+	var slots := _doors(s).map(func(d: PortDoor) -> int: return d.slot)
+	for slot in [0, 3, 8]:
+		assert_has(slots, slot)
+
+
+func test_port_ids_match_the_ports_table() -> void:
+	for path in _port_paths():
+		var root: PortScene3D = load(path).instantiate()
+		assert_eq(Market.port_scene(root.port_id), path, "%s 的 port_id 在港口表里指回它自己" % path)
+		root.free()
+
+
+func test_walking_into_each_seville_door_enters_it() -> void:
+	var s: PortScene3D = load(PORTS_DIR + "seville.tscn").instantiate()
+	add_child_autofree(s)
+	await wait_seconds(0.2)
+	for door: PortDoor in _doors(s):
+		var inward := -door.global_basis.z
+		s.player.global_position = door.global_position - inward * 1.5 + Vector3.DOWN * 0.9
+		await wait_seconds(0.1)
+		var action := "ui_up" if inward.z < -0.5 else ("ui_left" if inward.x < -0.5 else "ui_right")
+		Input.action_press(action)
+		await wait_seconds(0.8)
+		Input.action_release(action)
+		assert_true(s.doors.is_in_facility(), "槽 %d 的门走得进" % door.slot)
+		assert_eq(s.doors.session.slot, door.slot)
+		s.doors.leave()
+		await wait_seconds(0.1)

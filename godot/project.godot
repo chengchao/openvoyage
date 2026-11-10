@@ -11,6 +11,7 @@ config_version=5
 [application]
 
 config/name="OpenVoyage"
+config/version="0.1.0"
 config/description="OpenVoyage：开源大航海题材游戏（自带自制内容，游玩不需要原版游戏）。"
 run/main_scene="res://game/main.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
@@ -41,6 +42,8 @@ enabled=PackedStringArray("res://addons/gut/plugin.cfg")
 
 renderer/rendering_method="forward_plus"
 textures/canvas_textures/default_texture_filter=0
+; macOS universal（含 arm64）导出要求 ETC2/ASTC。
+textures/vram_compression/import_etc2_astc=true
 ; 像素对齐：相机/补间会让精灵落在半像素上，字模/主角(图满 16px 无边距)边列会被裁掉。
 ; 渲染前吸附到整数像素，消除边缘截断与抖动。
 2d/snap/snap_2d_transforms_to_pixel=true

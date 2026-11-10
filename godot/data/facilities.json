@@ -5,16 +5,16 @@
   "_correction_2026-06-10": "实机校正（里斯本逐门进门实证）：{银行,道具屋,行会} 三者在 slot 6/8/9 上整体错位，是一个 3-循环。实测：进 slot6 门(纹章盾 224)=行会、slot8 门(金器 234)=银行、slot9 门(柱卷 235)=道具屋。校正后符号也更顺（盾=公会徽、金器=钱、柱卷=海图）。原误：6=银行,8=道具屋,9=行会。招牌随门位不变（已 portmap 实测复核 6=224/8=234/9=235），仅 key/name/keeper_block/menu_index 在三槽间轮转归位。其余 8 槽符号自洽、暂按原判（0/1/2/3/4/5/7/10/11 待逐一进门复核）。",
   "facilities": [
     { "slot": 0,  "key": "market",         "name": "交易所", "confidence": "confirmed", "menu_index": 6 },
-    { "slot": 1,  "key": "tavern",         "name": "酒馆",   "confidence": "confirmed", "menu_index": 15 },
+    { "slot": 1,  "key": "tavern",         "name": "酒館",   "confidence": "confirmed", "menu_index": 15 },
     { "slot": 2,  "key": "shipyard",       "name": "造船所", "confidence": "confirmed", "menu_index": 22 },
-    { "slot": 3,  "key": "harbor",         "name": "港务局", "confidence": "high",      "menu_index": 9 },
-    { "slot": 4,  "key": "inn",            "name": "旅馆",   "confidence": "confirmed", "menu_index": 4 },
-    { "slot": 5,  "key": "palace",         "name": "王宫",   "confidence": "high",      "menu_index": 16 },
-    { "slot": 6,  "key": "guild",          "name": "行会",   "confidence": "confirmed", "menu_index": 1 },
+    { "slot": 3,  "key": "harbor",         "name": "港務局", "confidence": "high",      "menu_index": 9 },
+    { "slot": 4,  "key": "inn",            "name": "旅館",   "confidence": "confirmed", "menu_index": 4 },
+    { "slot": 5,  "key": "palace",         "name": "王宮",   "confidence": "high",      "menu_index": 16 },
+    { "slot": 6,  "key": "guild",          "name": "行會",   "confidence": "confirmed", "menu_index": 1 },
     { "slot": 7,  "key": "armory",         "name": "武器屋", "confidence": "high",      "menu_index": 8 },
-    { "slot": 8,  "key": "bank",           "name": "银行",   "confidence": "confirmed", "menu_index": 0 },
+    { "slot": 8,  "key": "bank",           "name": "銀行",   "confidence": "confirmed", "menu_index": 0 },
     { "slot": 9,  "key": "item_shop",      "name": "道具屋", "confidence": "confirmed", "menu_index": 5 },
-    { "slot": 10, "key": "church",         "name": "教会",   "confidence": "confirmed", "menu_index": 7 },
-    { "slot": 11, "key": "fortune_teller", "name": "占卜师", "confidence": "confirmed", "menu_index": 17 }
+    { "slot": 10, "key": "church",         "name": "教會",   "confidence": "confirmed", "menu_index": 7 },
+    { "slot": 11, "key": "fortune_teller", "name": "占卜師", "confidence": "confirmed", "menu_index": 17 }
   ]
 }

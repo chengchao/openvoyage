@@ -12,6 +12,7 @@
 ##   branch  AC=if-set / AD=if-clear（按 GameState 旗标决定是否跳转）
 ##   jump    无条件跳转；label  跳转目标标记
 ##   end     终止
+##   set_flag  自撰剧本用：立/清一个旗标（{flag, value 缺省 true}），让一段剧情只演一次
 ## set/arith/query/cond/sound/music/raw —— **语义未解**，一律记日志的安全 no-op（不评估、不跳转），
 ##   以便经验映射旗标/变量含义（do NOT invent）。cond 虽带跳转目标，但条件未解→不跳、取直落分支。
 class_name EventInterpreter
@@ -57,6 +58,24 @@ func get_log() -> Array:
 
 ## 取下一个对话节拍；内部消化 branch/jump/label 与 no-op 操作码，直到产出一拍或抵达 end。
 func next_beat() -> Dictionary:
+	if not has_content():
+		return {"kind": "end"}
+	var s: Dictionary = _steps[_pc]
+	_pc += 1
+	match str(s["op"]):
+		"window":
+			return {"kind": "open"}
+		"portrait":
+			var face := _state.get_var(int(s["from_var"])) if s.has("from_var") else int(s.get("kao", 0))
+			return {"kind": "portrait", "face": face}
+		"say":
+			return _line_beat(str(s.get("text", "")))
+	return {"kind": "wait"}
+
+
+## 还有节拍可演吗？走完挡在前面的控制流（旗标分支、set_flag…）停在下一拍上，不消耗它；
+## 已到 end 返回 false。调用方据此不为一段「旗标让它一句都不演」的剧情开对话。
+func has_content() -> bool:
 	var guard := 0
 	while _running and _pc >= 0 and _pc < _steps.size():
 		guard += 1
@@ -64,32 +83,22 @@ func next_beat() -> Dictionary:
 			_log.append("guard: aborted possible infinite loop")
 			break
 		var s: Dictionary = _steps[_pc]
-		if s.has("label"):                       # 标签标记：跳过
+		if s.has("label"):
 			_pc += 1
 			continue
 		var op := str(s.get("op", ""))
 		match op:
-			"window":
-				_pc += 1
-				return {"kind": "open"}
-			"portrait":
-				_pc += 1
-				var face := _state.get_var(int(s["from_var"])) if s.has("from_var") else int(s.get("kao", 0))
-				return {"kind": "portrait", "face": face}
-			"say":
-				_pc += 1
-				return _line_beat(str(s.get("text", "")))
-			"wait":
-				_pc += 1
-				return {"kind": "wait"}
+			"window", "portrait", "say", "wait":
+				return true
 			"end":
 				break
-			"branch":
-				if not _follow_branch(s):
-					return {"kind": "end"}
-			"jump":
-				if not _follow_jump(s):
-					return {"kind": "end"}
+			"branch", "jump":
+				var followed := _follow_branch(s) if op == "branch" else _goto(s)
+				if not followed:
+					break
+			"set_flag":
+				_state.set_flag(int(s.get("flag", 0)), bool(s.get("value", true)))
+				_pc += 1
 			"cond":
 				# 条件语义未解：不评估、不跳转，取直落分支（记日志）
 				_log.append("cond %s args=%s (no-op, fall through)" % [s.get("code", "?"), s.get("args", [])])
@@ -99,7 +108,7 @@ func next_beat() -> Dictionary:
 				_log.append("%s %s (no-op)" % [op, _brief(s)])
 				_pc += 1
 	_running = false
-	return {"kind": "end"}
+	return false
 
 
 # branch：按旗标决定是否跳转。返回 false=应终止（无法跟随的跨节跳转）。
@@ -109,10 +118,6 @@ func _follow_branch(s: Dictionary) -> bool:
 	if not take:
 		_pc += 1
 		return true
-	return _goto(s)
-
-
-func _follow_jump(s: Dictionary) -> bool:
 	return _goto(s)
 
 

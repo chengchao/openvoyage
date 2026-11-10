@@ -47,3 +47,37 @@ func substitute(text: String) -> String:
 	for k in _names:
 		out = out.replace("$" + str(k), str(_names[k]))
 	return out
+
+
+## 旗标/变量的整数下标写成字符串键（JSON 对象的键只能是字符串）。
+func to_dict() -> Dictionary:
+	var flags := {}
+	for idx: int in _flags:
+		flags[str(idx)] = _flags[idx]
+	var vars := {}
+	for idx: int in _vars:
+		vars[str(idx)] = _vars[idx]
+	return {"scenario": scenario, "chapter": chapter, "flags": flags, "vars": vars, "names": _names.duplicate()}
+
+
+## 不合法（缺字段、类型不对、下标不是整数）返回 null。
+static func from_dict(d: Variant) -> GameState:
+	if typeof(d) != TYPE_DICTIONARY or not World.is_whole(d.get("scenario"), -1) or not World.is_whole(d.get("chapter"), 0):
+		return null
+	for k: String in ["flags", "vars", "names"]:
+		if typeof(d.get(k)) != TYPE_DICTIONARY:
+			return null
+	var s := GameState.new(int(d["scenario"]), int(d["chapter"]))
+	for idx: Variant in d["flags"]:
+		if not str(idx).is_valid_int() or typeof(d["flags"][idx]) != TYPE_BOOL:
+			return null
+		s._flags[int(str(idx))] = d["flags"][idx]
+	for idx: Variant in d["vars"]:
+		if not str(idx).is_valid_int() or not World.is_whole(d["vars"][idx]):
+			return null
+		s._vars[int(str(idx))] = int(d["vars"][idx])
+	for key: Variant in d["names"]:
+		if typeof(key) != TYPE_STRING or typeof(d["names"][key]) != TYPE_STRING:
+			return null
+		s._names[key] = d["names"][key]
+	return s

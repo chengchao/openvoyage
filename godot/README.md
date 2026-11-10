@@ -33,5 +33,11 @@ godot --path godot
 
 ## 「可玩」定义（随里程碑加严）
 
-当前 M0：headless 启动 → 主场景实例化 → 主菜单可达（开始/退出按钮存在且已接线）→ exit 0。
-后续里程碑往 `smoke_test.gd` 追加步骤（港口行走、进设施、对话、存读档…），永久生效。
+冒烟验收 `smoke_test.gd` 现在覆盖：主菜单 → 新开一局 → 开场剧情演完 → 港内行走与 HUD → 进设施 →
+交易所买卖 → 银行存款 → 出航到第二座港卖货获利 → 存档/读档 → 标题「繼續航程」→ exit 0。
+新功能往 `smoke_test.gd` 追加步骤，永久生效。
+
+## 导出
+
+导出预设在 `export_presets.cfg`（Windows / Linux / macOS）。CI 的 Export workflow 在打 `v*` 标签、
+手动触发或 PR 改到导出配置时运行，并把三个平台的压缩包发布到 GitHub Release。

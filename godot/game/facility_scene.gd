@@ -77,7 +77,7 @@ func _ready() -> void:
 	_update_cursor()
 
 	var hint := Label.new()
-	hint.text = "按 ESC 离开"
+	hint.text = "按 Esc 離開"
 	hint.position = Vector2(8, panel.size.y - 24)
 	panel.add_child(hint)
 

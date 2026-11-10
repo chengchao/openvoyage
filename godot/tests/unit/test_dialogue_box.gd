@@ -48,3 +48,10 @@ func test_first_key_reveals_all_second_closes() -> void:
 	assert_signal_not_emitted(b, "closed")
 	b._unhandled_input(_press("ui_accept"))   # 已显完 → 关闭
 	assert_signal_emitted(b, "closed")
+
+
+func test_text_tokens_turns_line_breaks_into_newline_tokens() -> void:
+	var t := DialogueBox.text_tokens("甲\n乙")
+	assert_eq(t.size(), 3)
+	assert_eq(t[1]["type"], "newline", "多行回话（如行情表）要换行，不是画一个换行符")
+	assert_eq(t[2]["ch"], "乙")
