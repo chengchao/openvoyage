@@ -39,6 +39,11 @@ func test_every_port_meets_the_contract() -> void:
 		root.free()
 
 
+func test_lisbon_has_a_bank_door() -> void:
+	var slots := _doors(_lisbon()).map(func(d: PortDoor) -> int: return d.slot)
+	assert_has(slots, 8, "存取款只在银行（槽 8）能做，里斯本得有这扇门")
+
+
 func test_player_spawns_at_spawn_marker() -> void:
 	var s := _lisbon()
 	var spawn: Vector3 = s.get_node("Spawn").global_position

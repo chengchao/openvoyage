@@ -105,6 +105,7 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   gui-input-mouse-filter，违规须修或同行 `# lint-allow: <id>` 写明理由）。
   关卡几何 lint 写在 `tests/unit/test_lint_ports.gd`（每个 ports/*.tscn 从 Spawn 用主角胶囊洪泛：
   port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到）。
+  里斯本现有八扇门：交易所/酒馆/港务局/造船所（码头一排）、教会/王宫/行会（台地）、银行（槽 8，广场东侧，门朝西——从广场往东走进去）。
   待办：港内 NPC（旧 2D 的 NpcCrowd 已随网格港删除，需按 3D 重做）+ HUD；主角像素走路动画；Departure 接世界航海。
 - [~] 游戏内选单（港里按 ESC 开/关）：内容表驱动——`godot/data/game_menu.json`
   （分类 情報/艦隊/隨身物/系統 仿原版指令分组，标题与说明自撰）→ sim 层 `GameMenu`；`PortSession.Mode.GAME_MENU`

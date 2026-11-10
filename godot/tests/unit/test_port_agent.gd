@@ -3,6 +3,7 @@ extends GutTest
 
 const MARKET := 0
 const TAVERN := 1
+const BANK := 8
 
 
 func _agent() -> PortAgent:
@@ -124,6 +125,25 @@ func test_agent_trades_at_the_market() -> void:
 	assert_eq(obs["cargo"], {good["key"]: 4})
 	assert_eq(obs["gold"], PortSession.STARTING_GOLD - 4 * good["buy"])
 	assert_ne(obs["said"], "")
+
+
+func test_agent_walks_into_the_bank_and_deposits() -> void:
+	var agent := _agent()
+	await wait_seconds(0.2)
+	var door := _door(agent.observe(), BANK)
+	var me: Array = agent.observe()["position"]
+	await agent.act({"do": "walk", "dir": "down", "seconds": (door["at"][2] - me[2]) / Avatar3D.SPEED})
+	for _i in 12:
+		if agent.observe()["mode"] != "walking":
+			break
+		await agent.act({"do": "walk", "dir": "right", "seconds": 0.5})
+	var obs := agent.observe()
+	assert_eq(obs["mode"], "facility_menu", "银行门朝西，从广场往东走进去")
+	assert_eq(obs["facility"]["slot"], BANK)
+	assert_true(await agent.act({"do": "choose", "index": 0}))
+	assert_true(await agent.act({"do": "amount", "value": 500}))
+	obs = agent.observe()
+	assert_eq([obs["gold"], obs["bank"]], [PortSession.STARTING_GOLD - 500, 500])
 
 
 func test_agent_cancels_a_pick() -> void:

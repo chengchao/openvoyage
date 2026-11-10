@@ -2,7 +2,7 @@
 ##
 ## M0：按工程配置启动 → 主菜单可达（开始/退出按钮存在且已接线）→ 无错退出(0)。
 ## M2：从主菜单进入资料查看器，能从占位包成功打开至少 10 项图片。
-## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；交易所买进再卖出；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
+## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；交易所买进再卖出；走进银行存款；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
 ## 运行：godot --headless --path godot -s tests/smoke/smoke_test.gd
 extends SceneTree
 
@@ -73,6 +73,8 @@ func _smoke() -> bool:
 		return false
 	if not await _market(port):
 		return false
+	if not await _bank(port):
+		return false
 	if not await _story_at_door(port):
 		return false
 	return await _game_menu(port)
@@ -142,13 +144,40 @@ func _market(port: PortScene3D) -> bool:
 	return not port.doors.is_busy()
 
 
-func _push_into_door(port: PortScene3D) -> bool:
-	Input.action_press("ui_up")
+## 银行：门朝西，往东走进去 → 存款 500 → 离开。
+func _bank(port: PortScene3D) -> bool:
+	var agent := PortAgent.new(port)
+	var found := false
+	for door: PortDoor in port.find_children("*", "PortDoor", true, false):
+		if FacilityType.of(door.slot).key == &"bank":
+			_stand_before(port, door)
+			found = true
+	if not found or not await _push_into_door(port, "ui_right") or agent.observe()["facility"]["slot"] != 8:
+		push_error("没能走进银行")
+		return false
+	var before := agent.observe()
+	if not (await agent.act({"do": "choose", "index": 0}) and await agent.act({"do": "amount", "value": 500})):
+		push_error("银行存款流程走不通：%s" % agent.observe())
+		return false
+	var obs := agent.observe()
+	if obs["gold"] != before["gold"] - 500 or obs["bank"] != before["bank"] + 500:
+		push_error("存款后现金/存款有误：%s" % obs)
+		return false
+	print("  银行：存入 500 → %s" % obs["said"])
+	if not await agent.act({"do": "leave"}):
+		return false
+	for _i in 10:
+		await physics_frame
+	return not port.doors.is_busy()
+
+
+func _push_into_door(port: PortScene3D, action := "ui_up") -> bool:
+	Input.action_press(action)
 	for _i in 60:
 		await physics_frame
 		if port.doors.is_busy():
 			break
-	Input.action_release("ui_up")
+	Input.action_release(action)
 	return port.doors.is_busy()
 
 
@@ -172,6 +201,7 @@ func _story_at_door(port: PortScene3D) -> bool:
 	var st := GameState.new(1, 0)
 	st.set_name("n", "阿明")
 	port.doors.inject_story(EventScript.new(events, PackedStringArray(["〔店主〕\n$n，請進！"])), st)
+	_stand_before(port, door)
 	if not await _push_into_door(port) or not port.doors.is_in_cutscene():
 		push_error("撞有剧情的门未触发剧情对话")
 		return false
