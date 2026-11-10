@@ -121,10 +121,10 @@ func test_market_buy_goes_through_pick_list_and_amount() -> void:
 	var f := _inside(MARKET)
 	var good: Dictionary = Market.goods(0)[0]
 	f.facility_scene.menu_selected.emit(0, "採購貨物")
-	assert_not_null(f.goods_pick, "採購应弹选货列表")
+	assert_not_null(f.pick_list, "採購应弹选货列表")
 	assert_null(f.amount_entry)
-	f.goods_pick.confirm()
-	assert_null(f.goods_pick, "选定后选货列表关闭")
+	f.pick_list.confirm()
+	assert_null(f.pick_list, "选定后选货列表关闭")
 	assert_not_null(f.amount_entry, "接着输入数量")
 	_press("ui_up")
 	assert_eq(f.amount_entry.amount(), 1, "货物按件数调，不是按百")
@@ -140,7 +140,7 @@ func test_escape_in_pick_list_returns_to_facility_menu() -> void:
 	var f := _inside(MARKET)
 	f.facility_scene.menu_selected.emit(0, "採購貨物")
 	_press("ui_cancel")
-	assert_null(f.goods_pick)
+	assert_null(f.pick_list)
 	assert_true(f.is_in_facility(), "ESC 只关选货列表，不离开设施")
 	assert_null(f.game_menu)
 
@@ -150,7 +150,7 @@ func test_keys_in_pick_list_do_not_move_the_facility_menu() -> void:
 	f.facility_scene.menu_selected.emit(0, "採購貨物")
 	var before := f.facility_scene.selected_index()
 	_press("ui_down")
-	assert_eq(f.goods_pick.selected_index(), 1)
+	assert_eq(f.pick_list.selected_index(), 1)
 	assert_eq(f.facility_scene.selected_index(), before)
 
 

@@ -10,7 +10,7 @@ const MODE_NAMES := {
 	PortSession.Mode.FACILITY_MENU: "facility_menu",
 	PortSession.Mode.AMOUNT_ENTRY: "amount_entry",
 	PortSession.Mode.GAME_MENU: "game_menu",
-	PortSession.Mode.GOODS_PICK: "goods_pick",
+	PortSession.Mode.PICK: "pick",
 }
 
 var port: PortScene3D
@@ -45,7 +45,7 @@ func observe() -> Dictionary:
 			"menu": Array(flow.facility_scene.menu_labels())}
 	if flow.director != null:
 		obs["line"] = flow.director.current_line()
-	if s.mode == PortSession.Mode.GOODS_PICK:
+	if s.mode == PortSession.Mode.PICK:
 		obs["pick"] = {"prompt": s.pick_prompt,
 			"options": s.pick_options.map(func(row: Dictionary) -> String: return row["label"])}
 	if s.mode == PortSession.Mode.AMOUNT_ENTRY:
@@ -93,7 +93,7 @@ func act(a: Dictionary) -> bool:
 			return true
 		"pick":
 			var i: int = a.get("index", -1)
-			if mode != PortSession.Mode.GOODS_PICK or i < 0 or i >= flow.session.pick_options.size():
+			if mode != PortSession.Mode.PICK or i < 0 or i >= flow.session.pick_options.size():
 				return false
 			flow.pick(i)
 			return true
@@ -104,7 +104,7 @@ func act(a: Dictionary) -> bool:
 			return flow.session.mode == PortSession.Mode.FACILITY_MENU
 		"cancel":
 			match mode:
-				PortSession.Mode.GOODS_PICK:
+				PortSession.Mode.PICK:
 					flow.cancel_pick()
 				PortSession.Mode.AMOUNT_ENTRY:
 					flow.cancel_amount()

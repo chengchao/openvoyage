@@ -5,7 +5,7 @@
 class_name PortSession
 extends RefCounted
 
-enum Mode { WALKING, CUTSCENE, FACILITY_MENU, AMOUNT_ENTRY, GAME_MENU, GOODS_PICK }
+enum Mode { WALKING, CUTSCENE, FACILITY_MENU, AMOUNT_ENTRY, GAME_MENU, PICK }
 
 const NOT_OPEN_YET := "（此功能尚未開放）"
 
@@ -25,12 +25,12 @@ var save_path := SaveFile.DEFAULT_PATH  # 测试换成临时路径
 var mode := Mode.WALKING
 var slot := -1                       # 当前（或剧情后将进入的）设施槽号
 var interp: EventInterpreter         # CUTSCENE 时有效
-var amount_action := &""             # GOODS_PICK / AMOUNT_ENTRY 时有效：&"deposit" / &"withdraw" / &"buy_goods" / &"sell_goods"
+var pending_action := &""             # PICK / AMOUNT_ENTRY 时有效：&"deposit" / &"withdraw" / &"buy_goods" / &"sell_goods"
 var amount_cap := 0
 var amount_step := 100               # 金额输入的小步；货物按件数调
 var amount_prompt := ""
-var pick_prompt := ""                # GOODS_PICK 时有效
-var pick_options: Array = []         # GOODS_PICK 时有效：[{key, name, label, price, cap}]，label 带单价
+var pick_prompt := ""                # PICK 时有效
+var pick_options: Array = []         # PICK 时有效：[{key, name, label, price, cap}]，label 带单价
 var pending_good: Dictionary = {}    # 买卖的 AMOUNT_ENTRY 时有效：选中的那一行
 var _menu_notes := {}                # GAME_MENU 时有效：选单 action → 这次开选单以来的存/读档结果
 
@@ -76,7 +76,7 @@ func choose(index: int) -> String:
 			var cap := player_state.gold if action == &"deposit" else player_state.bank
 			if cap <= 0:
 				return balance_line()
-			amount_action = action
+			pending_action = action
 			amount_cap = cap
 			amount_prompt = "%s多少？" % ("存款" if action == &"deposit" else "提款")
 			mode = Mode.AMOUNT_ENTRY
@@ -86,10 +86,10 @@ func choose(index: int) -> String:
 			var rows := _buy_rows() if buying else _sell_rows()
 			if rows.is_empty():
 				return "您的現金或船艙空位不夠了。" if buying else "您船上沒有這裡收的貨。"
-			amount_action = action
+			pending_action = action
 			pick_options = rows
 			pick_prompt = "要買哪一種？" if buying else "要賣哪一種？"
-			mode = Mode.GOODS_PICK
+			mode = Mode.PICK
 			return ""
 		&"show_prices":
 			return price_list()
@@ -99,13 +99,13 @@ func choose(index: int) -> String:
 
 ## 选定一种货物，进金额输入（件数，上限 = 该行的 cap）。越界或不在选货时返回 false。
 func pick(index: int) -> bool:
-	if mode != Mode.GOODS_PICK or index < 0 or index >= pick_options.size():
+	if mode != Mode.PICK or index < 0 or index >= pick_options.size():
 		return false
 	pending_good = pick_options[index]
 	amount_cap = pending_good["cap"]
 	amount_step = 1
 	amount_prompt = "%s%s（單價 %d）幾件？" % [
-		"買進" if amount_action == &"buy_goods" else "賣出", pending_good["name"], pending_good["price"]]
+		"買進" if pending_action == &"buy_goods" else "賣出", pending_good["name"], pending_good["price"]]
 	pick_options = []
 	pick_prompt = ""
 	mode = Mode.AMOUNT_ENTRY
@@ -113,9 +113,9 @@ func pick(index: int) -> bool:
 
 
 func cancel_pick() -> bool:
-	if mode != Mode.GOODS_PICK:
+	if mode != Mode.PICK:
 		return false
-	_end_amount()
+	_end_step()
 	return true
 
 
@@ -124,7 +124,7 @@ func confirm_amount(amount: int) -> String:
 	if mode != Mode.AMOUNT_ENTRY or amount < 0 or amount > amount_cap:
 		return ""
 	var line := ""
-	match amount_action:
+	match pending_action:
 		&"deposit":
 			player_state.deposit(amount)
 			line = balance_line()
@@ -139,14 +139,14 @@ func confirm_amount(amount: int) -> String:
 			if player_state.sell(pending_good["key"], amount, pending_good["price"]):
 				line = "賣出%s%d件，收入%d。\n" % [pending_good["name"], amount, amount * pending_good["price"]]
 			line += hold_line()
-	_end_amount()
+	_end_step()
 	return line
 
 
 func cancel_amount() -> bool:
 	if mode != Mode.AMOUNT_ENTRY:
 		return false
-	_end_amount()
+	_end_step()
 	return true
 
 
@@ -248,8 +248,8 @@ func _sell_rows() -> Array:
 	return rows
 
 
-func _end_amount() -> void:
-	amount_action = &""
+func _end_step() -> void:
+	pending_action = &""
 	amount_cap = 0
 	amount_step = 100
 	amount_prompt = ""

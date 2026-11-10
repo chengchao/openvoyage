@@ -188,7 +188,7 @@ func test_buying_goes_pick_then_amount_then_back_to_menu() -> void:
 	var s := _at_market()
 	var good: Dictionary = Market.goods(0)[0]
 	assert_eq(s.choose(BUY), "", "进入选货，无即时反馈")
-	assert_eq(s.mode, PortSession.Mode.GOODS_PICK)
+	assert_eq(s.mode, PortSession.Mode.PICK)
 	assert_string_contains(s.pick_options[0]["label"], good["label"])
 	assert_string_contains(s.pick_options[0]["label"], str(good["buy"]), "选货行标出单价")
 	assert_true(s.pick(0))
@@ -244,7 +244,7 @@ func test_selling_offers_only_held_goods_and_caps_at_the_quantity() -> void:
 	var good: Dictionary = Market.goods(0)[1]
 	s.player_state.cargo = {good["key"]: 7}
 	assert_eq(s.choose(SELL), "")
-	assert_eq(s.mode, PortSession.Mode.GOODS_PICK)
+	assert_eq(s.mode, PortSession.Mode.PICK)
 	assert_eq(s.pick_options.size(), 1)
 	assert_string_contains(s.pick_options[0]["label"], good["label"])
 	assert_string_contains(s.pick_options[0]["label"], str(good["sell"]))
@@ -302,10 +302,10 @@ func test_pick_is_refused_out_of_range_or_out_of_mode() -> void:
 	s.choose(BUY)
 	assert_false(s.pick(-1))
 	assert_false(s.pick(s.pick_options.size()))
-	assert_eq(s.mode, PortSession.Mode.GOODS_PICK)
+	assert_eq(s.mode, PortSession.Mode.PICK)
 	assert_false(s.leave(), "选货时不能直接离开设施")
 	assert_eq(s.choose(SELL), "", "选货时菜单不响应")
-	assert_eq(s.mode, PortSession.Mode.GOODS_PICK)
+	assert_eq(s.mode, PortSession.Mode.PICK)
 
 
 func test_show_prices_lists_every_good_the_port_trades() -> void:

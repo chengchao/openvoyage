@@ -125,7 +125,7 @@ func test_agent_trades_at_the_market() -> void:
 	assert_false(await agent.act({"do": "pick", "index": 0}), "还没选买卖")
 	assert_true(await agent.act({"do": "choose", "index": 0}))
 	var obs := agent.observe()
-	assert_eq(obs["mode"], "goods_pick")
+	assert_eq(obs["mode"], "pick")
 	var good: Dictionary = Market.goods(0)[0]
 	assert_string_contains(obs["pick"]["options"][0], good["label"])
 	assert_false(await agent.act({"do": "pick", "index": obs["pick"]["options"].size()}), "越界被拒")

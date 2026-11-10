@@ -1,6 +1,6 @@
-## 选货模态（表现层）：覆盖在设施面板之上，列出可买/可卖的货物让玩家挑一种。
+## 单选列表模态（表现层）：列出几行让玩家挑一行（交易所选货、出航选目的地）。
 ## 操作：↑/↓ 移光标（回绕），确定(ui_accept)或点击一行发 picked(index)，取消(ui_cancel)发 cancelled。
-class_name GoodsPick
+class_name PickList
 extends CanvasLayer
 
 signal picked(index: int)
@@ -29,7 +29,7 @@ func _ready() -> void:
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.4)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_STOP  # 模态：选货时挡住下层设施菜单的点击
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP  # 模态：挡住下层设施菜单的点击
 	add_child(dim)
 
 	var panel := Panel.new()

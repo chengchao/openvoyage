@@ -1,9 +1,9 @@
-## GoodsPick（选货模态：上下移光标、确定/取消）测试。
+## PickList（单选列表模态：上下移光标、确定/取消）测试。
 extends GutTest
 
 
-func _pick() -> GoodsPick:
-	var p := GoodsPick.new()
+func _pick() -> PickList:
+	var p := PickList.new()
 	p.setup("要買哪一種？", PackedStringArray(["葡萄酒", "食鹽", "砂糖"]))
 	add_child_autofree(p)
 	return p
