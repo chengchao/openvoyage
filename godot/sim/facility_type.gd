@@ -1,6 +1,5 @@
-## 设施类型描述符（纯逻辑数据）。一个 ZA_DAT 槽位 = 一种设施类型，全港通用。
-## key 是稳定英文标识（代码按它分发逻辑/菜单，文化圈无关）；name 为显示名。
-## 目录人工维护于 res://data/facilities.json（据 docs/08 §8.3 招牌共现实证 + 领域判定）；
+## 设施类型描述符（纯逻辑数据）。一个门槽位 = 一种设施类型，全港通用。
+## key 是稳定英文标识（代码按它分发逻辑/菜单）；name 为显示名。目录人工维护于 res://data/facilities.json。
 class_name FacilityType
 extends RefCounted
 
@@ -9,20 +8,17 @@ const CONFIRMED := "confirmed"   # 招牌图案明确
 const HIGH := "high"             # 招牌工具/分布强指向
 const TENTATIVE := "tentative"   # 待 DOSBox 进门 / 解码 MENU 终验
 
-var slot: int            # ZA_DAT 槽位号 0..11
+var slot: int            # 门槽位号 0..11
 var key: StringName      # 稳定标识：market/tavern/...
 var name: String         # 显示名
 var confidence: String   # CONFIRMED/HIGH/TENTATIVE
-var menu_index: int      # 本设施菜单在 MENU.DAT(text/menu.json)中的组下标，-1 = 未定
 
 
-func _init(p_slot: int, p_key: StringName, p_name: String, p_confidence: String,
-		p_menu_index := -1) -> void:
+func _init(p_slot: int, p_key: StringName, p_name: String, p_confidence: String) -> void:
 	slot = p_slot
 	key = p_key
 	name = p_name
 	confidence = p_confidence
-	menu_index = p_menu_index
 
 
 # --- 12 设施目录（人工维护的 JSON，懒加载并缓存） ---
@@ -48,10 +44,8 @@ static func _load_catalog() -> Array[FacilityType]:
 		push_error("facilities.json 格式错误")
 		return out
 	for e in parsed["facilities"]:
-		var mi: Variant = e.get("menu_index")
 		out.append(FacilityType.new(
-			int(e["slot"]), StringName(e["key"]), str(e["name"]),
-			str(e["confidence"]), int(mi) if mi != null else -1))
+			int(e["slot"]), StringName(e["key"]), str(e["name"]), str(e["confidence"])))
 	return out
 
 

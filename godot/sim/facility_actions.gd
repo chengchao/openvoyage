@@ -41,6 +41,19 @@ static func resolve(facility_key: StringName, item_index: int) -> Dictionary:
 	return {}
 
 
+## 设施菜单各项的标签（自撰内容，按菜单项序号排列，不含末项「離開」）；未知设施返回空。
+static func labels(facility_key: StringName) -> PackedStringArray:
+	var out := PackedStringArray()
+	for row in _load().get("facilities", {}).get(String(facility_key), []):
+		out.append(str(row.get("label", "")))
+	return out
+
+
+## 店主的进门招呼（自撰内容）；未知设施返回 ""。
+static func greeting(facility_key: StringName) -> String:
+	return str(_load().get("greetings", {}).get(String(facility_key), ""))
+
+
 ## 仅供测试：清空静态缓存。
 static func _reset() -> void:
 	_doc = {}

@@ -1,6 +1,5 @@
 ## 对话窗（表现层，可复用）：底部信息框 = 头像 + 名字栏 + 逐字显示正文 + 按键推进/关闭。
-## 吃 MesText.parse 出的 token；ASCII 用系统字体绘制，双字节字形经 FontCodec→字模图集绘制，
-## 未映射字形画占位框（码表破解后自动变正确字形，UI 不改）。剧本对话与设施对话共用。
+## 吃逐字 token（text / newline），每字一格，用系统字体绘制。剧本对话与设施对话共用。
 class_name DialogueBox
 extends CanvasLayer
 
@@ -9,18 +8,15 @@ signal closed
 const CELL := 16
 const REVEAL_PER_SEC := 30.0
 const BOX_H := 88
-const FONT_ATLAS := "images/font/font1.png"
 
 var _speaker: Array = []
 var _body: Array = []
 var _portrait: Texture2D
-var _atlas: Texture2D
 var _reveal := 0.0
 var _text: Control
 
 
-## 把可读 Unicode 串拆成逐字 "text" token（每字一格，系统字体绘制）。
-## 用于现成可读文本（设施名等占位台词）；真 MES 文本用 glyph token 经字模图集渲染。
+## 把字符串拆成逐字 "text" token。
 static func text_tokens(s: String) -> Array:
 	var out: Array = []
 	for ch in s:
@@ -28,12 +24,10 @@ static func text_tokens(s: String) -> Array:
 	return out
 
 
-func setup(speaker: Array, body: Array, portrait: Texture2D = null, converted_dir := "") -> void:
+func setup(speaker: Array, body: Array, portrait: Texture2D = null) -> void:
 	_speaker = speaker
 	_body = body
 	_portrait = portrait
-	if converted_dir != "":
-		_atlas = _load_texture(converted_dir.path_join(FONT_ATLAS))
 
 
 func _ready() -> void:
@@ -111,21 +105,9 @@ func _draw_run(toks: Array, font: Font, origin: Vector2, n: int, color: Color) -
 
 
 func _draw_token(tok: Dictionary, font: Font, pos: Vector2, color: Color) -> void:
-	match tok.type:
-		"ascii", "text":
-			_text.draw_string(font, pos + Vector2(2, CELL - 3), str(tok.ch),
-				HORIZONTAL_ALIGNMENT_LEFT, -1, CELL - 2, color)
-		"var":
-			_text.draw_string(font, pos + Vector2(0, CELL - 3), "$",
-				HORIZONTAL_ALIGNMENT_LEFT, -1, CELL - 2, color)
-		"glyph":
-			var g := FontCodec.glyph(tok.code)
-			if g.is_empty() or _atlas == null:
-				_text.draw_rect(Rect2(pos + Vector2(1, 1), Vector2(CELL - 2, CELL - 2)), color, false)
-			else:
-				var cell := FontCodec.atlas_cell(0)  # index via g (待破解)
-				var src := Rect2(cell.col * CELL, cell.row * CELL, CELL, CELL)
-				_text.draw_texture_rect_region(_atlas, Rect2(pos, Vector2(CELL, CELL)), src, color)
+	if tok.type == "text":
+		_text.draw_string(font, pos + Vector2(2, CELL - 3), str(tok.ch),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, CELL - 2, color)
 
 
 # --- 查询/控制（测试用） ---
@@ -143,13 +125,3 @@ func reveal_all() -> void:
 	if _text != null:
 		_text.queue_redraw()
 
-
-func _load_texture(path: String) -> Texture2D:
-	if path.begins_with("res://") and ResourceLoader.exists(path):
-		var res := load(path)
-		if res is Texture2D:
-			return res
-	var img := Image.new()
-	if img.load(path) == OK:
-		return ImageTexture.create_from_image(img)
-	return null

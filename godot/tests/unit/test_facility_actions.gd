@@ -31,3 +31,22 @@ func test_resolve_carries_catalog_contract() -> void:
 
 func test_resolve_unknown_returns_empty_dict() -> void:
 	assert_eq(FacilityActions.resolve(&"bank", 99), {})
+
+
+func test_every_facility_has_a_self_made_menu() -> void:
+	for ft in FacilityType.catalog():
+		var labels := FacilityActions.labels(ft.key)
+		assert_gt(labels.size(), 0, "%s 应有自制菜单" % ft.key)
+		for i in labels.size():
+			assert_ne(labels[i], "", "%s 项 %d 标签为空" % [ft.key, i])
+			assert_ne(FacilityActions.action_of(ft.key, i), &"", "%s 项 %d 应对应一个行为" % [ft.key, i])
+
+
+func test_every_facility_has_a_greeting() -> void:
+	for ft in FacilityType.catalog():
+		assert_ne(FacilityActions.greeting(ft.key), "", "%s 应有店主招呼" % ft.key)
+
+
+func test_unknown_facility_has_no_menu_or_greeting() -> void:
+	assert_eq(FacilityActions.labels(&"no_such_facility").size(), 0)
+	assert_eq(FacilityActions.greeting(&"no_such_facility"), "")

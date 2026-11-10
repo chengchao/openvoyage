@@ -84,7 +84,11 @@ func _door(port: PortScene3D) -> bool:
 	if not await _push_into_door(port):
 		push_error("HD-2D 港口碰门未进设施")
 		return false
-	print("  HD-2D 港口：朝门走入 → 进入设施『%s』" % port.doors.facility_scene.facility_name())
+	var labels := port.doors.facility_scene.menu_labels()
+	if labels.size() < 2:
+		push_error("设施菜单只有「離開」：自制内容未随包")
+		return false
+	print("  HD-2D 港口：朝门走入 → 进入设施『%s』，菜单 %s" % [port.doors.facility_scene.facility_name(), labels])
 	for _i in 10:
 		await physics_frame  # 像真人一样在店里停留，港口才会冻结主角
 	port.doors.facility_scene._request_exit()

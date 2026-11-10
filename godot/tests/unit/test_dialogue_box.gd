@@ -5,11 +5,11 @@ extends GutTest
 func _box() -> DialogueBox:
 	var b := DialogueBox.new()
 	b.setup([], [
-		{"type": "ascii", "ch": "5"},
-		{"type": "glyph", "code": 0x9452},
+		{"type": "text", "ch": "5"},
+		{"type": "text", "ch": "金"},
 		{"type": "newline"},
-		{"type": "glyph", "code": 0xAB36},
-	], null, "")
+		{"type": "text", "ch": "幣"},
+	])
 	add_child_autofree(b)
 	return b
 

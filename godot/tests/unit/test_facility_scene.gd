@@ -21,32 +21,20 @@ func test_has_shopkeeper_sprite() -> void:
 	assert_not_null(s.shopkeeper_texture(), "应有店主画（占位）")
 
 
-func test_menu_labels_fallback_when_no_converted_dir() -> void:
-	var s := _scene(8)  # 银行（slot 8，实机校正）；无 converted_dir → 仅「離開」
-	var labels := s.menu_labels()
-	assert_eq(labels.size(), 1)
-	assert_eq(labels[0], "離開")
+func test_bank_menu_comes_with_the_game() -> void:
+	var labels := _scene(8).menu_labels()  # 银行
+	assert_eq(labels.size(), 5, "银行 4 项 + 離開，不需要任何外部数据")
+	assert_eq(labels[4], "離開", "末项恒为離開")
+	assert_eq(Array(labels.slice(0, 4)), Array(FacilityActions.labels(&"bank")))
 
 
-func test_menu_labels_from_real_menudat_group() -> void:
-	# 合成 text/menu.json，断言银行(menu_index=0)取到真菜单 + 末项「離開」。
-	var dir := "user://test_fmenu"
-	DirAccess.make_dir_recursive_absolute(dir + "/text")
-	var f := FileAccess.open(dir + "/text/menu.json", FileAccess.WRITE)
-	var groups := []
-	for i in 61:
-		groups.append("")
-	groups[0] = "甲項\n乙項\n丙項\n丁項"  # 组 0 = 银行
-	f.store_string(JSON.stringify(groups))
-	f.close()
-	var s := FacilityScene.new()
-	s.setup(FacilityType.of(8), dir)  # 银行（slot 8）menu_index=0
-	add_child_autofree(s)
-	var labels := s.menu_labels()
-	assert_eq(labels[0], "甲項")
-	assert_eq(labels[3], "丁項")
-	assert_eq(labels[labels.size() - 1], "離開", "末项恒为離開")
-	OS.move_to_trash(ProjectSettings.globalize_path(dir))
+func test_menu_fits_inside_the_panel_for_every_facility() -> void:
+	for ft in FacilityType.catalog():
+		var s := _scene(ft.slot)
+		await wait_frames(2)
+		var last: Label = s._menu_items[-1]
+		var panel := last.get_parent().get_parent() as Control
+		assert_lte(last.get_global_rect().end.y, panel.get_global_rect().end.y, "%s 的菜单超出面板" % ft.key)
 
 
 func test_cancel_emits_exit_requested() -> void:
@@ -59,30 +47,17 @@ func test_cancel_emits_exit_requested() -> void:
 # --- 菜单选择（光标导航 + 选定） ---
 
 func _fmenu_scene() -> FacilityScene:
-	# 合成银行真菜单（4 项 + 離開），返回已就绪场景，光标可导航。
-	var dir := "user://test_fmenu_nav"
-	DirAccess.make_dir_recursive_absolute(dir + "/text")
-	var f := FileAccess.open(dir + "/text/menu.json", FileAccess.WRITE)
-	var groups := []
-	for i in 61:
-		groups.append("")
-	groups[0] = "甲項\n乙項\n丙項\n丁項"  # 银行 menu_index=0
-	f.store_string(JSON.stringify(groups))
-	f.close()
-	var s := FacilityScene.new()
-	s.setup(FacilityType.of(8), dir)  # 银行（slot 8）
-	add_child_autofree(s)
-	return s
+	return _scene(8)  # 银行：4 项 + 離開
 
 
 func test_selection_starts_at_first_item() -> void:
 	var s := _fmenu_scene()
 	assert_eq(s.selected_index(), 0)
-	assert_eq(s.selected_label(), "甲項")
+	assert_eq(s.selected_label(), FacilityActions.labels(&"bank")[0])
 
 
 func test_move_selection_wraps() -> void:
-	var s := _fmenu_scene()  # 5 项：甲項/乙項/丙項/丁項/離開
+	var s := _fmenu_scene()  # 5 项，末项離開
 	s.move_selection(-1)  # 从 0 上移 → 末项
 	assert_eq(s.selected_index(), 4)
 	assert_eq(s.selected_label(), "離開")
@@ -99,15 +74,16 @@ func test_activate_leave_emits_exit() -> void:
 
 
 func test_activate_item_emits_menu_selected() -> void:
-	var s := _fmenu_scene()  # 光标在「甲項」
+	var s := _fmenu_scene()  # 光标在首项
 	watch_signals(s)
 	s.activate_selected()
-	assert_signal_emitted_with_parameters(s, "menu_selected", [0, "甲項"])
+	assert_signal_emitted_with_parameters(s, "menu_selected", [0, FacilityActions.labels(&"bank")[0]])
 
 
 func test_shows_greeting_dialogue_on_entry() -> void:
 	var s := _scene(1)  # 酒馆
 	assert_true(s.has_dialogue(), "进门应弹出店主寒暄对话框")
+	assert_eq(s.spoken_line(), FacilityActions.greeting(&"tavern"), "寒暄是这家店自己的招呼语")
 
 
 func test_closing_greeting_removes_dialogue() -> void:
@@ -152,5 +128,6 @@ func test_clicking_leave_exits() -> void:
 func test_clicking_a_menu_item_selects_it() -> void:
 	var s := _fmenu_scene()
 	watch_signals(s)
-	_click(s, "乙項")
-	assert_signal_emitted_with_parameters(s, "menu_selected", [1, "乙項"])
+	var second := FacilityActions.labels(&"bank")[1]
+	_click(s, second)
+	assert_signal_emitted_with_parameters(s, "menu_selected", [1, second])

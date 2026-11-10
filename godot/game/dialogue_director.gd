@@ -3,7 +3,7 @@
 ## 调用方无需知道 UI 细节——逻辑(解释器)/表现(对话窗)经节拍词表解耦（参 docs/08 §8.5）。
 ##
 ## 复用现成 DialogueBox：每个 wait 分隔的「一句」用一个 DialogueBox 显示，其 closed 信号
-## （逐字全显后再按键）= 推进到下一句。头像由 CC 节拍按头像号选自制占位头像（不用原版 KAO）。
+## （逐字全显后再按键）= 推进到下一句。头像由 portrait 节拍按头像号选自制占位头像。
 class_name DialogueDirector
 extends Node
 
@@ -15,7 +15,6 @@ const PORTRAIT_COUNT := 6
 # 任何暴露 next_beat()->{kind,…} 的运行器（当前为 EventInterpreter 命令表运行器；鸭子类型）。
 # 节拍词表统一（open/portrait/line/wait/end），故协调器与具体运行器解耦。
 var _interp
-var _converted_dir: String = ""
 var _box: DialogueBox
 var _pending: Dictionary = {}
 var _face: int = -1
@@ -24,9 +23,8 @@ var _active := false
 
 ## 直接驱动一个已 start 的运行器（EventInterpreter，调用方先定位入口）。
 ## 返回 true=已开始演出（至少一句）；false=立即结束（无可演内容）。
-func play(interp, converted_dir := "") -> bool:
+func play(interp) -> bool:
 	_interp = interp
-	_converted_dir = converted_dir
 	_face = -1
 	_active = true
 	return _pump()
@@ -83,7 +81,6 @@ func _show() -> void:
 		DialogueBox.text_tokens(_pending["speaker"]),
 		DialogueBox.text_tokens(_pending["body"]),
 		_portrait(_pending["face"]),
-		_converted_dir,
 	)
 	_box.closed.connect(_on_box_closed)
 	add_child(_box)
