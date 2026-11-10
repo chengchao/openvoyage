@@ -499,3 +499,87 @@ func test_goods_bought_in_one_port_sell_for_more_in_the_other() -> void:
 	there.pick(0)
 	there.confirm_amount(20)
 	assert_gt(w.player.gold, World.STARTING_GOLD, "低买高卖赚到钱")
+
+
+const PALACE := 5
+
+
+func _lines(s: PortSession) -> Array:
+	var out := []
+	while true:
+		var b := s.interp.next_beat()
+		if b["kind"] == "line":
+			out.append(b["body"])
+		elif b["kind"] == "end":
+			break
+	s.story_finished()
+	return out
+
+
+func _past_intro() -> World:
+	var w := World.new_game()
+	World.current = null
+	var s := PortSession.new(w)
+	s.arrive()
+	_lines(s)
+	return w
+
+
+func test_new_game_arrival_plays_the_intro_then_returns_to_walking() -> void:
+	var s := PortSession.new(World.new_game())
+	World.current = null
+	assert_true(s.arrive())
+	assert_eq(s.mode, PortSession.Mode.CUTSCENE)
+	assert_false(s.enter_door(TAVERN), "开场没演完不能进门")
+	assert_between(_lines(s).size(), 8, 12)
+	assert_eq(s.mode, PortSession.Mode.WALKING, "开场不通向任何设施")
+	assert_eq(s.slot, -1)
+	assert_true(s.enter_door(TAVERN))
+
+
+func test_intro_does_not_replay_on_a_later_port_entry_or_after_loading() -> void:
+	var w := _past_intro()
+	var again := PortSession.new(w)
+	assert_false(again.arrive(), "回到里斯本不重演")
+	assert_eq(again.mode, PortSession.Mode.WALKING)
+	var loaded := World.from_dict(JSON.parse_string(JSON.stringify(w.to_dict())))
+	assert_false(PortSession.new(loaded).arrive(), "读档后不重演")
+
+
+func test_arrival_without_a_story_does_nothing() -> void:
+	var s := PortSession.new()
+	assert_false(s.arrive())
+	assert_eq(s.mode, PortSession.Mode.WALKING)
+	s.open_menu()
+	assert_false(s.arrive(), "只能从走路进剧情")
+
+
+func test_palace_opens_as_usual_before_the_goal_is_met() -> void:
+	var s := PortSession.new(_past_intro())
+	s.enter_door(PALACE)
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
+
+
+func test_palace_congratulates_once_when_the_goal_is_met_then_opens() -> void:
+	var w := _past_intro()
+	w.player.gold = 9000
+	w.player.deposit(4000)
+	w.player.gold += 1000
+	var s := PortSession.new(w)
+	s.enter_door(PALACE)
+	assert_eq(s.mode, PortSession.Mode.CUTSCENE)
+	assert_gt(_lines(s).size(), 0)
+	assert_eq([s.mode, s.slot], [PortSession.Mode.FACILITY_MENU, PALACE], "道贺完照常进王宫")
+	s.leave()
+	s.enter_door(PALACE)
+	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU, "只道贺一次")
+	assert_true(s.enter_door(TAVERN) or s.leave(), "游戏照常继续")
+
+
+func test_menu_detail_for_status_shows_the_goal_and_progress() -> void:
+	var s := PortSession.new(_past_intro())
+	var detail := s.menu_detail(0, 3)
+	assert_string_contains(detail, s.world.goal()["text"])
+	assert_string_contains(detail, str(World.STARTING_GOLD))
+	s.world.player.gold = 10000
+	assert_string_contains(s.menu_detail(0, 3), "已達成")

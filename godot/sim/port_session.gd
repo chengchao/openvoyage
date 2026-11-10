@@ -1,4 +1,5 @@
 ## 港口玩法状态机（纯逻辑）：在港里走 → 撞门（剧情优先，docs/09 §9.A）→ 设施菜单 ⇄ 金额输入 → 离开；在港里走 ⇄ 游戏内选单。
+## 抵港剧情（开场）：在港里走 → 剧情 → 回到在港里走。剧情演完去哪只看 slot：有门进设施，没门回去走路。
 ## 交易所买卖多一步：设施菜单 → 单选（选货）→ 金额输入（件数）→ 设施菜单。
 ## 出航：港务局「啟航出海」或走进出航区 → 单选（选目的地）→ SAILED。world 当场改到目的港，
 ## 本会话到此为止；表现层见到 SAILED 就换进 world 所在港的场景，那边另建会话。
@@ -10,6 +11,7 @@ extends RefCounted
 enum Mode { WALKING, CUTSCENE, FACILITY_MENU, AMOUNT_ENTRY, GAME_MENU, PICK, SAILED }
 
 const NOT_OPEN_YET := "（此功能尚未開放）"
+const ARRIVAL := 0x10  # 抵港事件键的低字节。设施槽只到 0x0B，撞不上门
 
 var world: World
 var port_id: int:
@@ -21,7 +23,9 @@ var player_state: PlayerState:
 var game_state: GameState:
 	get: return world.story
 	set(v): world.story = v
-var event_script: EventScript  # 为空 = 无剧情
+var event_script: EventScript:  # 为空 = 无剧情
+	get: return world.story_script
+	set(v): world.story_script = v
 var save_path := SaveFile.DEFAULT_PATH  # 测试换成临时路径
 
 var mode := Mode.WALKING
@@ -51,11 +55,22 @@ func enter_door(door_slot: int) -> bool:
 	return true
 
 
+## 进港时调一次：本港登记了还没演过的抵港剧情就演，返回 true。
+func arrive() -> bool:
+	if mode != Mode.WALKING:
+		return false
+	interp = _story_at(ARRIVAL)
+	if interp == null:
+		return false
+	mode = Mode.CUTSCENE
+	return true
+
+
 func story_finished() -> bool:
 	if mode != Mode.CUTSCENE:
 		return false
 	interp = null
-	mode = Mode.FACILITY_MENU
+	mode = Mode.FACILITY_MENU if slot >= 0 else Mode.WALKING
 	return true
 
 
@@ -197,7 +212,7 @@ func load_game() -> World:
 	return loaded
 
 
-## 选单详情栏的文字：该项说明；主角情報追加所在港、日期与资金，存/读档追加结果，尚未開放的项追加提示。越界返回 ""。
+## 选单详情栏的文字：该项说明；主角情報追加目标与进度、所在港、日期与资金，存/读档追加结果，尚未開放的项追加提示。越界返回 ""。
 func menu_detail(cat_index: int, item_index: int) -> String:
 	var rows := GameMenu.items(cat_index)
 	if item_index < 0 or item_index >= rows.size():
@@ -206,6 +221,8 @@ func menu_detail(cat_index: int, item_index: int) -> String:
 	var action := GameMenu.action_of(cat_index, item_index)
 	match action:
 		&"status":
+			if world.goal_line() != "":
+				text += "\n" + world.goal_line()
 			text += "\n%s　第 %d 日　%s" % [Market.port_name(port_id), world.day, balance_line()]
 		&"cargo":
 			for good: String in player_state.cargo:
@@ -295,11 +312,13 @@ func _end_step() -> void:
 	mode = Mode.FACILITY_MENU if slot >= 0 else Mode.WALKING
 
 
-func _story_at(door_slot: int) -> EventInterpreter:
+## (本港, 事件码) 登记的剧情；没登记、或旗标让它这次一句都不演，返回 null。
+func _story_at(code: int) -> EventInterpreter:
 	if event_script == null or game_state.scenario < 0:
 		return null
-	var label := event_script.find_entry(game_state.chapter, port_id, door_slot)
+	var label := event_script.find_entry(game_state.chapter, port_id, code)
 	if label == "":
 		return null
+	world.goal()  # 让「目标已达成」旗标跟上眼下的资产，剧本的分支才看得到
 	var it := EventInterpreter.new(event_script, game_state, game_state.chapter)
-	return it if it.start(label) else null
+	return it if it.start(label) and it.has_content() else null

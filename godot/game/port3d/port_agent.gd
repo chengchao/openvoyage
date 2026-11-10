@@ -48,6 +48,7 @@ func observe() -> Dictionary:
 		"bank": s.player_state.bank,
 		"cargo": s.player_state.cargo.duplicate(),
 		"day": s.world.day,
+		"goal": s.world.goal(),
 		"said": flow.last_said,
 	}
 	if flow.facility_scene != null:

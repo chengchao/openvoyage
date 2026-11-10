@@ -40,7 +40,7 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   **已整体放弃原档兼容**：原版档与转换产物只供开发者参照，不是游戏的输入，也不做「玩家导入原档」功能。新代码不得读 `assets-converted/`。
   设施菜单标签与店主招呼已自撰（`godot/data/facility_actions.json` 的 `label` / `greetings`，由 `FacilityActions` 解析）；
   游戏代码里读转换产物的路径（TextDb / MesText / FontCodec / EventScript.load / 字模图集）已于 2026-11-09 删除。
-  下文「当前状态」里提到这些类与「真 MENU / MESSAGE.DAT 台词」之处是历史记录。待办：自撰开场剧情（EventScript 现在只能由代码注入，尚无随包剧本）。
+  下文「当前状态」里提到这些类与「真 MENU / MESSAGE.DAT 台词」之处是历史记录。自撰开场剧情已随包（2026-11-09，`godot/data/story/main.json`，见「当前状态」的随包剧本一条）。
 - 依赖原版档的测试标记 skip-if-missing。
 
 ## 当前状态
@@ -136,6 +136,13 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   测试注入假函数以免换掉 GUT 的场景）。agent：observe 带 `port {id, name}`，启航后旧 port 被释放，用 `PortAgent.current(tree)` 取新港。
   冒烟：里斯本买毛織品 → 啟航 → 塞維利亞卖出现金高于开局 → 在塞維利亞存档/读档/繼續航程。
   航行目前免费、瞬间到达。待办：世界地图航海、补给与水手、海上事件。
+- [~] 随包剧本与目标：`godot/data/story/main.json`（自撰，EventScript 命令表格式 + `names` / `goal` / `words`），
+  `EventScript.load_shipped()` 读取；`World.new_game()` 与读档都挂上它（`World.story_script`，内容不进存档，旗标进存档）。
+  自撰剧本用 `set_flag` 操作码立旗标（逆向来的 `set` 仍是记日志的 no-op）；`EventInterpreter.has_content()` 让
+  「旗标挡掉、一句不演」的剧情不开对话。抵港剧情 = 事件码 `PortSession.ARRIVAL`(0x10)：`PortSession.arrive()`
+  WALKING → CUTSCENE → WALKING（开场只演一次，旗标 0）。目标「現金加存款達到 10000」在 `World.goal()`
+  （达成即立旗标 1，之后花掉也算）；达成后进里斯本王宫演一次道贺（旗标 2），游戏照常继续。
+  主角情報与 `PortAgent.observe()["goal"]` 都显示目标与进度。
 - [ ] M6+：世界航海 / 贸易 / 战斗 / …（见 docs/koukai2-godot-plan.md §2）
 
 ## 逆向资料快速索引

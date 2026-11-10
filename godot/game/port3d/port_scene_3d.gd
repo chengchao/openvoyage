@@ -44,6 +44,7 @@ func _ready() -> void:
 	var notice := World.current.take_notice()
 	if notice != "":
 		doors.announce(notice)
+	doors.arrive()
 	_camera.global_position = _camera_target()
 	_camera.look_at(player.global_position + Vector3.UP)
 

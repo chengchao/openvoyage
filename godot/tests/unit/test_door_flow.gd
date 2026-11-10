@@ -264,3 +264,19 @@ func test_arrival_notice_is_shown_and_observable() -> void:
 	var f := _flow()
 	f.announce("航行 4 日，抵達塞維利亞。")
 	assert_eq(f.last_said, "航行 4 日，抵達塞維利亞。")
+
+
+func test_arrival_story_plays_then_returns_to_walking_without_a_facility() -> void:
+	var f := _flow()
+	f.session.world = World.new_game()
+	World.current = null
+	f.arrive()
+	assert_true(f.is_in_cutscene())
+	assert_ne(f.director.current_line()["body"], "")
+	for _i in 20:
+		if f.is_in_cutscene():
+			f.director.advance()
+	assert_false(f.is_busy(), "开场演完回到走路")
+	assert_null(f.facility_scene)
+	f.arrive()
+	assert_false(f.is_busy(), "再次抵港不重演")

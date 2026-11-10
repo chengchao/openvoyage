@@ -74,3 +74,28 @@ func test_find_entry_default_and_wildcard() -> void:
 	# 主角轨阈值 0x64：港 ≥ 0x64 时 0xA3 通配失效
 	assert_eq(s.find_entry(0, 5, 5), "L_stage", "港5<0x64 → a305 通配命中设施5")
 	assert_eq(s.find_entry(0, 0x70, 5), "", "港0x70≥0x64 → 通配失效，且非港0 无兜底")
+
+
+func test_words_can_ship_inside_the_events_document() -> void:
+	var s := EventScript.new({"scenario": 1, "chapters": [], "words": ["第一句。"]})
+	assert_eq(s.text("main/0"), "第一句。")
+
+
+func test_shipped_story_loads_and_every_line_resolves() -> void:
+	var s := EventScript.load_shipped()
+	assert_not_null(s, "随包剧本读不出来")
+	assert_gte(s.scenario, 0)
+	assert_eq(int(s.goal["target"]), 10000)
+	assert_ne(str(s.goal["text"]), "")
+	assert_ne(str(s.names.get("n", "")), "", "主角有名字")
+	var says := 0
+	for step: Dictionary in s.chapter_script(0):
+		match step.get("op", ""):
+			"say":
+				says += 1
+				assert_ne(s.text(step["text"]), "", "台词 %s 没有文字" % step["text"])
+			"branch", "jump":
+				assert_gte(s.label_index(0, step["to"]), 0, "跳转目标 %s 不存在" % step["to"])
+	assert_gt(says, 0)
+	for e: Dictionary in s.chapters[0]["entries"]:
+		assert_gte(s.label_index(0, e["label"]), 0, "入口 %s 不存在" % e["label"])

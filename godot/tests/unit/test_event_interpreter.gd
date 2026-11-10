@@ -173,3 +173,48 @@ func test_unresolved_jump_ends() -> void:
 	var it := EventInterpreter.new(script, _state(), 0)
 	it.start("L0")
 	assert_eq(it.next_beat()["kind"], "end")
+
+
+func _once_script() -> EventScript:
+	return EventScript.new({"scenario": 1, "chapters": [{"index": 0, "entries": [], "script": [
+		{"label": "L0"},
+		{"op": "branch", "if": "set", "flag": 3, "to": "L_done"},
+		{"op": "set_flag", "flag": 3},
+		{"op": "say", "text": "snr1/1"},
+		{"op": "wait"},
+		{"label": "L_done"},
+		{"op": "end"},
+	]}]}, WORDS)
+
+
+func test_set_flag_makes_a_scene_play_only_once() -> void:
+	var st := _state()
+	var first := EventInterpreter.new(_once_script(), st, 0)
+	first.start("L0")
+	assert_eq(_say_bodies(first), ["空無一人。"])
+	assert_true(st.flag(3))
+	var again := EventInterpreter.new(_once_script(), st, 0)
+	again.start("L0")
+	assert_eq(_say_bodies(again), [])
+
+
+func test_set_flag_can_clear() -> void:
+	var st := _state({3: true})
+	var it := EventInterpreter.new(EventScript.new({"scenario": 1, "chapters": [{"index": 0, "entries": [], "script": [
+		{"label": "L0"}, {"op": "set_flag", "flag": 3, "value": false}, {"op": "end"},
+	]}]}, WORDS), st, 0)
+	it.start("L0")
+	it.next_beat()
+	assert_false(st.flag(3))
+
+
+func test_has_content_tells_whether_anything_will_play_without_consuming_it() -> void:
+	var st := _state()
+	var it := EventInterpreter.new(_once_script(), st, 0)
+	it.start("L0")
+	assert_true(it.has_content())
+	assert_true(it.has_content(), "问两次结果一样")
+	assert_eq(_say_bodies(it), ["空無一人。"], "问过之后台词一句不少")
+	var again := EventInterpreter.new(_once_script(), st, 0)
+	again.start("L0")
+	assert_false(again.has_content(), "旗标已立：这段一句都不演")

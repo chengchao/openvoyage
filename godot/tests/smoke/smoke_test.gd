@@ -2,7 +2,8 @@
 ##
 ## M0：按工程配置启动 → 主菜单可达（开始/退出按钮存在且已接线）→ 无错退出(0)。
 ## M2：从主菜单进入资料查看器，能从占位包成功打开至少 10 项图片。
-## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；交易所买进再卖出；走进银行存款；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
+## 开场：开始按钮进灰盒里斯本，先演随包的开场剧情，逐句推进到底才轮到走路；之后换场景、读档都不重演。
+## 港口：碰门进设施、退出；交易所买进再卖出；走进银行存款；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
 ## 航行：新开一局，里斯本买毛織品 → 港务局啟航 → 塞維利亞卖出，现金高于开局 → 走进塞維利亞的银行存款。
 ## 存读档（在塞維利亞）：选单存档 → 提款 → 读档回到存档时的局面；回到標題 →「繼續航程」接着存档玩，人还在塞維利亞。
 ## 运行：godot --headless --path godot -s tests/smoke/smoke_test.gd
@@ -73,6 +74,8 @@ func _smoke() -> bool:
 	if port == null:
 		push_error("开始游戏未进入港口场景")
 		return false
+	if not await _intro(port):
+		return false
 	if not await _door(port):
 		return false
 	if not await _market(port):
@@ -87,6 +90,28 @@ func _smoke() -> bool:
 	var ok := seville != null and await _save_and_load(seville) and await _continue_from_title()
 	DirAccess.remove_absolute(SAVE_PATH)
 	return ok
+
+
+## 新开一局进港先演开场：逐句推进到底，回到走路，目标可观察。
+func _intro(port: PortScene3D) -> bool:
+	var agent := PortAgent.new(port)
+	var first := agent.observe()
+	if first["mode"] != "cutscene" or first["line"]["body"] == "":
+		push_error("新开一局没有演开场：%s" % first)
+		return false
+	var lines := 0
+	while agent.observe()["mode"] == "cutscene" and lines < 30:
+		await agent.act({"do": "next"})
+		lines += 1
+	var obs := agent.observe()
+	if obs["mode"] != "walking" or obs["goal"].get("target", 0) <= 0 or obs["goal"]["met"]:
+		push_error("开场演完没有回到走路，或没有目标：%s" % obs)
+		return false
+	if not await agent.act({"do": "walk", "dir": "down", "seconds": 0.2}):
+		push_error("开场演完走不动")
+		return false
+	print("  开场：『%s』… 共 %d 句 → 走路；目標：%s" % [first["line"]["body"].replace("\n", " "), lines, obs["goal"]["text"]])
+	return true
 
 
 ## HD-2D 港口：主角朝一扇门走进去 → 进该门的设施 → 退出回到港口。
@@ -145,7 +170,7 @@ func _voyage() -> PortScene3D:
 	for _i in 5:
 		await physics_frame
 	var agent := PortAgent.current(self)
-	if agent == null or agent.observe()["port"]["id"] != 0:
+	if agent == null or agent.observe()["port"]["id"] != 0 or not await _intro(agent.port):
 		push_error("新开一局没有进里斯本")
 		return null
 	if not (await _walk_into(agent.port, &"market") and await agent.act({"do": "choose", "index": 0})):
@@ -407,7 +432,8 @@ func _continue_from_title() -> bool:
 		push_error("繼續航程未进入港口场景")
 		return false
 	var obs := PortAgent.new(port).observe()
-	if obs["gold"] != before["gold"] or obs["bank"] != before["bank"] or obs["port"] != before["port"] or obs["port"]["id"] != 1:
+	if (obs["mode"] != "walking" or obs["gold"] != before["gold"] or obs["bank"] != before["bank"]
+			or obs["port"] != before["port"] or obs["port"]["id"] != 1):
 		push_error("繼續航程后的局面不是存档里的：%s" % obs)
 		return false
 	print("  標題 →「繼續航程」→ %s，現金 %d　存款 %d" % [obs["port"]["name"], obs["gold"], obs["bank"]])

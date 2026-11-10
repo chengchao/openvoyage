@@ -3,13 +3,14 @@
 class_name World
 extends RefCounted
 
-const STARTING_GOLD := 2000  # 开局现金（占位，待开场剧情校准）
+const STARTING_GOLD := 2000  # 开局现金；开场剧情里提到这个数，改它要一起改 data/story/main.json
 const MAX_WHOLE := 1 << 53  # JSON 数字是 double，超过这个就不再是精确整数
 
 static var current: World
 
 var player := PlayerState.new(STARTING_GOLD, 0)
 var story := GameState.new()
+var story_script: EventScript  # 随包剧本：是内容不是进度，不进存档。裸 World.new() 没有 = 无剧情、无目标
 var port_id := 0
 var day := 1
 var notice := ""  # 给下一个港口场景显示一次的话（抵港通知）；不进存档
@@ -17,7 +18,34 @@ var notice := ""  # 给下一个港口场景显示一次的话（抵港通知）
 
 static func new_game() -> World:
 	current = World.new()
+	var shipped := EventScript.load_shipped()
+	if shipped != null:
+		current.story_script = shipped
+		current.story = GameState.new(shipped.scenario, 0)
+		for key: String in shipped.names:
+			current.story.set_name(key, shipped.names[key])
 	return current
+
+
+## 本局目标 {text, progress, target, met}，progress = 现金加存款；没有剧本返回 {}。
+## 达成的那一刻记进旗标（剧本据此道贺），之后把钱花掉也仍算达成。
+func goal() -> Dictionary:
+	if story_script == null or story_script.goal.is_empty():
+		return {}
+	var target := int(story_script.goal["target"])
+	var met_flag := int(story_script.goal["met_flag"])
+	var progress := player.gold + player.bank
+	if progress >= target:
+		story.set_flag(met_flag, true)
+	return {"text": str(story_script.goal["text"]), "progress": progress, "target": target, "met": story.flag(met_flag)}
+
+
+## 目标与进度的一行字；没有目标返回 ""。
+func goal_line() -> String:
+	var g := goal()
+	if g.is_empty():
+		return ""
+	return "目標%s：%s（目前 %d）" % ["已達成" if g["met"] else "", g["text"], g["progress"]]
 
 
 func take_notice() -> String:
@@ -43,6 +71,7 @@ static func from_dict(d: Variant) -> World:
 	var w := World.new()
 	w.player = p
 	w.story = s
+	w.story_script = EventScript.load_shipped()
 	w.port_id = int(d["port_id"])
 	w.day = int(d["day"])
 	return w

@@ -98,3 +98,42 @@ func test_notice_is_read_once_and_not_saved() -> void:
 	assert_false(w.to_dict().has("notice"))
 	assert_eq(w.take_notice(), "航行 4 日，抵達塞維利亞。")
 	assert_eq(w.take_notice(), "")
+
+
+func test_new_game_ships_with_a_protagonist_and_a_goal() -> void:
+	var w := World.new_game()
+	assert_ne(w.story.substitute("$n"), "$n", "主角有名字")
+	var goal := w.goal()
+	assert_ne(goal["text"], "")
+	assert_eq([goal["progress"], goal["target"], goal["met"]], [World.STARTING_GOLD, 10000, false])
+
+
+func test_goal_progress_is_cash_plus_bank() -> void:
+	var w := World.new_game()
+	w.player.deposit(500)
+	assert_eq(w.goal()["progress"], World.STARTING_GOLD)
+	w.player.gold += 7999
+	assert_false(w.goal()["met"])
+	w.player.gold += 1
+	assert_eq([w.goal()["progress"], w.goal()["met"]], [10000, true])
+
+
+func test_goal_once_met_stays_met_after_spending_and_after_loading() -> void:
+	var w := World.new_game()
+	w.player.gold = 10000
+	assert_true(w.goal()["met"])
+	w.player.gold = 10
+	assert_eq([w.goal()["progress"], w.goal()["met"]], [10, true])
+	assert_true(World.from_dict(_through_json(w.to_dict())).goal()["met"])
+
+
+func test_loaded_save_has_the_story_and_goal() -> void:
+	var w := World.new_game()
+	var back := World.from_dict(_through_json(w.to_dict()))
+	assert_eq(back.goal(), w.goal())
+	assert_eq(back.story.substitute("$n"), w.story.substitute("$n"))
+
+
+func test_world_without_a_story_has_no_goal() -> void:
+	assert_eq(World.new().goal(), {})
+	assert_eq(World.new().goal_line(), "")

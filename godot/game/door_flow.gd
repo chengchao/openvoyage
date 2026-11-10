@@ -47,6 +47,11 @@ func open(slot: int) -> void:
 		_sync()
 
 
+func arrive() -> void:
+	if session.arrive():
+		_sync()
+
+
 func choose(index: int) -> void:
 	_say(session.choose(index))
 
@@ -144,7 +149,7 @@ func _sync() -> void:
 		add_child(director)
 		director.finished.connect(_on_story_finished)
 		if not director.play(session.interp):
-			_on_story_finished()  # 入口无可演内容 → 直接进设施
+			_on_story_finished()  # 只有开窗/换头像、没有一句台词
 			return
 	elif m != PortSession.Mode.CUTSCENE and director != null:
 		director.queue_free()

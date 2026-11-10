@@ -4,7 +4,7 @@
       {"key": "fleet", "label": "艦隊情報", "desc": "查看整支艦隊的編成、航速與補給狀況。", "action": ""},
       {"key": "ship", "label": "船隻情報", "desc": "逐艘查看船隻的船型、耐久與武裝。", "action": ""},
       {"key": "crew", "label": "人物情報", "desc": "查看同行航海士的能力與現任職務。", "action": ""},
-      {"key": "hero", "label": "主角情報", "desc": "查看主角目前的所在地與資金。", "action": "status"},
+      {"key": "hero", "label": "主角情報", "desc": "查看主角目前的目標、所在地與資金。", "action": "status"},
       {"key": "cargo", "label": "貨物情報", "desc": "查看各船載運的貨物與進貨價格。", "action": ""},
       {"key": "cargo_list", "label": "貨物一覽", "desc": "把全艦隊的貨物彙整成一張清單。", "action": "cargo"},
       {"key": "discoveries", "label": "發現物", "desc": "回顧航行途中找到的發現物。", "action": ""},

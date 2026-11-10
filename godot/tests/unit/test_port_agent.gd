@@ -9,7 +9,7 @@ const SAVE_PATH := "user://test_tmp/port_agent.json"
 
 
 func before_each() -> void:
-	World.current = null
+	World.current = World.new()  # 没有剧本的一局：各测试从走路开始，不先演开场
 	_entered.clear()
 	DirAccess.remove_absolute(SAVE_PATH)
 
@@ -262,3 +262,21 @@ func test_agent_cancels_a_destination_pick_opened_at_the_departure_zone() -> voi
 
 func test_current_finds_the_port_the_tree_is_showing() -> void:
 	assert_null(PortAgent.current(get_tree()), "GUT 的当前场景不是港口")
+
+
+func test_new_game_opens_on_the_intro_and_reports_the_goal() -> void:
+	World.new_game()
+	var agent := _agent()
+	var obs := agent.observe()
+	assert_eq(obs["mode"], "cutscene", "新开一局先演开场")
+	assert_ne(obs["line"]["body"], "")
+	assert_eq(obs["goal"], {"text": World.current.goal()["text"], "progress": World.STARTING_GOLD, "target": 10000, "met": false})
+	assert_false(await agent.act({"do": "walk", "dir": "up", "seconds": 0.1}), "开场中不能走")
+	for _i in 20:
+		if agent.observe()["mode"] == "cutscene":
+			await agent.act({"do": "next"})
+	assert_eq(agent.observe()["mode"], "walking")
+	assert_true(await agent.act({"do": "walk", "dir": "down", "seconds": 0.2}))
+
+	agent.port.free()
+	assert_eq(_agent().observe()["mode"], "walking", "再进里斯本不重演")

@@ -4,6 +4,10 @@ extends GutTest
 const PORTS_DIR := "res://game/port3d/ports/"
 
 
+func before_each() -> void:
+	World.current = World.new()  # 没有剧本的一局：进港即可走，不先演开场
+
+
 func _port_paths() -> PackedStringArray:
 	var out := PackedStringArray()
 	for f in DirAccess.get_files_at(PORTS_DIR):
