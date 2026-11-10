@@ -113,7 +113,7 @@ func test_bank_cancel_leaves_funds_unchanged() -> void:
 func test_unimplemented_menu_item_says_not_open_yet() -> void:
 	var f := _inside(TAVERN)
 	f.facility_scene.menu_selected.emit(0, "賭博")
-	assert_null(f.amount_entry, "非银行不弹金额输入")
+	assert_null(f.amount_entry, "非銀行不弹金额输入")
 	assert_true(f.facility_scene.has_dialogue(), "以一句反馈占位")
 
 

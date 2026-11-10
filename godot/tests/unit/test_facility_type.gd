@@ -11,15 +11,15 @@ func test_of_returns_type_by_slot() -> void:
 	assert_eq(FacilityType.of(0).name, "交易所")
 	assert_eq(FacilityType.of(1).key, &"tavern")
 	assert_eq(FacilityType.of(10).key, &"church")
-	assert_eq(FacilityType.of(11).name, "占卜师")
+	assert_eq(FacilityType.of(11).name, "占卜師")
 
 
 func test_slot_identities() -> void:
 	assert_eq(FacilityType.of(7).key, &"armory", "槽 7 = 武器屋")
 	# 实机校正（2026-06-10，逐门进门实证）：{银行,道具屋,行会} 在槽 6/8/9 上是 3-循环错位。
 	# 真相：槽 6 门(纹章盾)=行会、槽 8 门(金器)=银行、槽 9 门(柱卷)=道具屋。
-	assert_eq(FacilityType.of(6).key, &"guild", "槽 6 = 行会（实机校正）")
-	assert_eq(FacilityType.of(8).key, &"bank", "槽 8 = 银行（实机校正）")
+	assert_eq(FacilityType.of(6).key, &"guild", "槽 6 = 行會（实机校正）")
+	assert_eq(FacilityType.of(8).key, &"bank", "槽 8 = 銀行（实机校正）")
 	assert_eq(FacilityType.of(9).key, &"item_shop", "槽 9 = 道具屋（实机校正）")
 
 

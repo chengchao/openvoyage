@@ -11,8 +11,8 @@ func _scene(slot := 1) -> FacilityScene:
 
 func test_title_shows_facility_name() -> void:
 	var s := _scene(1)  # 酒馆
-	assert_eq(s.facility_name(), "酒馆")
-	assert_string_contains(s.title_text(), "酒馆")
+	assert_eq(s.facility_name(), "酒館")
+	assert_string_contains(s.title_text(), "酒館")
 	assert_eq(s.facility_type().key, &"tavern", "持有设施类型，供 M5 据 key 载入功能")
 
 
@@ -23,7 +23,7 @@ func test_has_shopkeeper_sprite() -> void:
 
 func test_bank_menu_comes_with_the_game() -> void:
 	var labels := _scene(8).menu_labels()  # 银行
-	assert_eq(labels.size(), 5, "银行 4 项 + 離開，不需要任何外部数据")
+	assert_eq(labels.size(), 5, "銀行 4 项 + 離開，不需要任何外部数据")
 	assert_eq(labels[4], "離開", "末项恒为離開")
 	assert_eq(Array(labels.slice(0, 4)), Array(FacilityActions.labels(&"bank")))
 

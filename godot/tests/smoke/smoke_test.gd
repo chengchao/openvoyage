@@ -193,7 +193,7 @@ func _voyage() -> PortScene3D:
 
 	if not (await _walk_into(agent.port, &"harbor") and await agent.act({"do": "choose", "index": 0})
 			and agent.observe()["mode"] == "pick"):
-		push_error("港务局啟航没有问去哪：%s" % agent.observe())
+		push_error("港務局啟航没有问去哪：%s" % agent.observe())
 		return null
 	var route: String = agent.observe()["pick"]["options"][0]
 	var lisbon := agent.port
@@ -225,7 +225,7 @@ func _voyage() -> PortScene3D:
 
 	if not (await _walk_into(agent.port, &"bank") and await agent.act({"do": "choose", "index": 0})
 			and await agent.act({"do": "amount", "value": 500}) and await _leave(agent.port, agent)):
-		push_error("塞維利亞的银行走不进或存不了款：%s" % agent.observe())
+		push_error("塞維利亞的銀行走不进或存不了款：%s" % agent.observe())
 		return null
 	return agent.port
 
@@ -275,17 +275,17 @@ func _bank(port: PortScene3D) -> bool:
 			_stand_before(port, door)
 			found = true
 	if not found or not await _push_into_door(port, "ui_right") or agent.observe()["facility"]["slot"] != 8:
-		push_error("没能走进银行")
+		push_error("没能走进銀行")
 		return false
 	var before := agent.observe()
 	if not (await agent.act({"do": "choose", "index": 0}) and await agent.act({"do": "amount", "value": 500})):
-		push_error("银行存款流程走不通：%s" % agent.observe())
+		push_error("銀行存款流程走不通：%s" % agent.observe())
 		return false
 	var obs := agent.observe()
 	if obs["gold"] != before["gold"] - 500 or obs["bank"] != before["bank"] + 500:
 		push_error("存款后现金/存款有误：%s" % obs)
 		return false
-	print("  银行：存入 500 → %s" % obs["said"])
+	print("  銀行：存入 500 → %s" % obs["said"])
 	if not await agent.act({"do": "leave"}):
 		return false
 	for _i in 10:

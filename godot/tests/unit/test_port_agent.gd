@@ -58,7 +58,7 @@ func test_observation_at_spawn() -> void:
 	assert_eq(obs["day"], 1)
 	assert_eq(obs["port"], {"id": 0, "name": "里斯本"})
 	var tavern := _door(obs, TAVERN)
-	assert_eq(tavern.get("name"), "酒馆", "观察里列出各门：槽号、名字、位置")
+	assert_eq(tavern.get("name"), "酒館", "观察里列出各门：槽号、名字、位置")
 	assert_gt(obs["doors"].size(), 1)
 
 
@@ -158,7 +158,7 @@ func test_agent_walks_into_the_bank_and_deposits() -> void:
 			break
 		await agent.act({"do": "walk", "dir": "right", "seconds": 0.5})
 	var obs := agent.observe()
-	assert_eq(obs["mode"], "facility_menu", "银行门朝西，从广场往东走进去")
+	assert_eq(obs["mode"], "facility_menu", "銀行门朝西，从广场往东走进去")
 	assert_eq(obs["facility"]["slot"], BANK)
 	assert_true(await agent.act({"do": "choose", "index": 0}))
 	assert_true(await agent.act({"do": "amount", "value": 500}))

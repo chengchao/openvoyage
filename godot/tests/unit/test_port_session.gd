@@ -467,7 +467,7 @@ func test_a_port_without_routes_cannot_be_left() -> void:
 	s.port_id = 999
 	assert_false(s.open_departure())
 	s.enter_door(HARBOR)
-	assert_ne(s.choose(SET_SAIL), "", "港务局说明没有航线")
+	assert_ne(s.choose(SET_SAIL), "", "港務局说明没有航线")
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
 
 
@@ -569,7 +569,7 @@ func test_palace_congratulates_once_when_the_goal_is_met_then_opens() -> void:
 	s.enter_door(PALACE)
 	assert_eq(s.mode, PortSession.Mode.CUTSCENE)
 	assert_gt(_lines(s).size(), 0)
-	assert_eq([s.mode, s.slot], [PortSession.Mode.FACILITY_MENU, PALACE], "道贺完照常进王宫")
+	assert_eq([s.mode, s.slot], [PortSession.Mode.FACILITY_MENU, PALACE], "道贺完照常进王宮")
 	s.leave()
 	s.enter_door(PALACE)
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU, "只道贺一次")
