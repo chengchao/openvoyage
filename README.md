@@ -9,8 +9,21 @@ OpenVoyage 是独立的爱好者项目，与 KOEI Tecmo 无关，也未获其认
 - 原版逆向资料：[docs/koukai2-docs/](docs/koukai2-docs/)
 - 工作守则（铁律/TDD/法律边界）：[CLAUDE.md](CLAUDE.md)
 
-本仓库不含任何原版游戏资产。设施菜单与店主台词是随包的自撰内容；剧情、贸易与航海内容还没有。
+本仓库不含任何原版游戏资产。设施菜单、店主台词、开场剧情、货物与价格都是随包的自撰内容。
 `converter/` 是开发者研究原版数据用的参照工具，玩家不需要它；CI 与冒烟测试使用 `placeholder/` 自制占位资产。
+
+## 试玩
+
+从 [Releases](https://github.com/chengchao/openvoyage/releases) 下载对应平台的压缩包，解压后直接运行，不需要安装 Godot，也不需要原版游戏。
+
+- Windows：运行 `OpenVoyage.exe`。
+- Linux：`chmod +x OpenVoyage.x86_64` 后运行。
+- macOS：包未经公证，首次打开要在 Finder 里右键选「打开」。
+
+操作：方向键走路，朝门前进进入设施，Enter 确定，Esc 开选单或取消。
+目前可玩的内容：里斯本与塞维利亚两座港、交易所买卖、银行存取、港务局出航、存读档，目标是把总资产做到 10000。
+
+也可以从源码运行：装好 Godot 4.3 后执行 `godot --path godot`。
 
 ## 布局
 
