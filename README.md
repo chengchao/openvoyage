@@ -18,7 +18,7 @@ OpenVoyage 是独立的爱好者项目，与 KOEI Tecmo 无关，也未获其认
 
 - Windows：运行 `OpenVoyage.exe`。
 - Linux：`chmod +x OpenVoyage.x86_64` 后运行。
-- macOS：包未经公证，首次打开要在 Finder 里右键选「打开」。
+- macOS：解压后双击 `OpenVoyage.app`。v0.1.1 起的包经过签名与公证，可直接打开；v0.1.0 的包会被系统拦下，请改下新版。
 
 操作：方向键走路，朝门前进进入设施，Enter 确定，Esc 开选单或取消。
 目前可玩的内容：里斯本与塞维利亚两座港、交易所买卖、银行存取、港务局出航、存读档，目标是把总资产做到 10000。
