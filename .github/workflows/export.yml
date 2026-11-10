@@ -81,8 +81,81 @@ jobs:
           name: OpenVoyage-builds
           path: build/OpenVoyage-*.zip
 
-      - name: 发布到 GitHub Release（仅标签）
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
+  # 未公证的 macOS 包下载后会被 Gatekeeper 拦下（macOS 15 起连「右键 → 打开」也不行）。
+  # 配了签名 secrets 就用 Developer ID 签名并公证；没配则原样放行 ad-hoc 包，fork 也能出包。
+  sign-macos:
+    name: macOS 签名与公证
+    needs: export
+    runs-on: macos-latest
+    env:
+      CERT_P12_BASE64: ${{ secrets.MACOS_CERT_P12_BASE64 }}
+      CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+      NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+      NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+      NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: OpenVoyage-builds
+
+      - name: 是否配了签名 secrets
+        id: creds
+        run: |
+          if [ -n "$CERT_P12_BASE64" ] && [ -n "$NOTARY_KEY_P8_BASE64" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::未配置 macOS 签名 secrets，macOS 包保持 ad-hoc 签名、未公证。"
+          fi
+
+      - name: Developer ID 签名
+        if: steps.creds.outputs.present == 'true'
+        run: |
+          set -e
+          unzip -q OpenVoyage-macos.zip -d app
+          APP=$(ls -d app/*.app)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          KC="$RUNNER_TEMP/build.keychain"
+          KC_PW=$(uuidgen)
+          echo "$CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KC_PW" "$KC"
+          security set-keychain-settings -lut 3600 "$KC"
+          security unlock-keychain -p "$KC_PW" "$KC"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KC" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KC_PW" "$KC" >/dev/null
+          security list-keychains -d user -s "$KC"
+          IDENTITY=$(security find-identity -v -p codesigning "$KC" | awk -F'"' '/Developer ID Application/{print $2; exit}')
+          test -n "$IDENTITY" || { echo "::error::证书里没有 Developer ID Application 身份"; exit 1; }
+          codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP"
+          codesign --verify --deep --strict "$APP"
+
+      - name: 公证并装订凭证
+        if: steps.creds.outputs.present == 'true'
+        run: |
+          set -e
+          echo "$NOTARY_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/key.p8"
+          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/notarize.zip" \
+            --key "$RUNNER_TEMP/key.p8" --key-id "$NOTARY_KEY_ID" --issuer "$NOTARY_ISSUER_ID" --wait
+          xcrun stapler staple "$APP"
+          spctl --assess --type execute -vv "$APP"
+          rm OpenVoyage-macos.zip
+          ditto -c -k --keepParent "$APP" OpenVoyage-macos.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenVoyage-release
+          path: OpenVoyage-*.zip
+
+  release:
+    name: 发布到 GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: sign-macos
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: OpenVoyage-release
+      - env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" build/OpenVoyage-*.zip --generate-notes
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" OpenVoyage-*.zip --generate-notes
