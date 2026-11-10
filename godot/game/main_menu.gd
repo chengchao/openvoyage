@@ -4,11 +4,17 @@ class_name MainMenu
 extends Control
 
 signal start_requested
+signal continue_requested
 signal view_requested
 signal quit_requested
+
+var save_path := SaveFile.DEFAULT_PATH  # 测试换成临时路径
 
 
 func _ready() -> void:
 	(%StartButton as Button).pressed.connect(func() -> void: start_requested.emit())
+	var resume := %ContinueButton as Button
+	resume.disabled = SaveFile.load(save_path) == null  # 读不出来的存档也不给点，免得点了没反应
+	resume.pressed.connect(func() -> void: continue_requested.emit())
 	(%ViewButton as Button).pressed.connect(func() -> void: view_requested.emit())
 	(%QuitButton as Button).pressed.connect(func() -> void: quit_requested.emit())

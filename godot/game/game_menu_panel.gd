@@ -104,10 +104,12 @@ func move_item(delta: int) -> void:
 
 
 ## 选定当前项：有 action 才发 action_requested；尚未開放的项详情栏已写明，不另作反馈。
+## 发完重画：存/读档的结果是写进详情栏的。
 func activate() -> void:
 	var action := GameMenu.action_of(_cat, _item)
 	if action != &"":
 		action_requested.emit(action)
+		_refresh()
 
 
 func _unhandled_input(event: InputEvent) -> void:

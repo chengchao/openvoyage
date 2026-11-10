@@ -110,8 +110,16 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
 - [~] 游戏内选单（港里按 ESC 开/关）：内容表驱动——`godot/data/game_menu.json`
   （分类 情報/艦隊/隨身物/系統 仿原版指令分组，标题与说明自撰）→ sim 层 `GameMenu`；`PortSession.Mode.GAME_MENU`
   （只能从 WALKING 开、开着时不能进门/走动）+ `menu_detail`；表现层 `GameMenuPanel`（页签/项目/详情三栏 + 资金顶栏，键鼠皆可）。
-  agent：`menu` / `menu_select` / `close`，observe 带 `game_menu`。已实装 action：`status`（主角情報，详情栏显示港号与资金）、`cargo`（貨物一覽）、
+  agent：`menu` / `menu_select` / `menu_activate`（选定光标项）/ `close`，observe 带 `game_menu` 与 `day`。已实装 action：
+  `status`（主角情報，详情栏显示港号与资金）、`cargo`（貨物一覽）、`save`（儲存進度）、`load`（讀取進度）、
   `title`（回到標題）、`quit`（結束遊戲）；其余项 action 为空 = 「尚未開放」（灰字），随各里程碑在表里填 action 并加分支。
+- [x] 存读档 + 跨场景状态：sim 层 `World`（player/story/port_id/day；`World.current` 跨场景存活，`new_game()` 开新局）是
+  唯一的可存档状态，`PortSession` 只是在某个 world 上玩（`player_state`/`game_state`/`port_id` 都是 world 的视图）；
+  `PortScene3D._ready` 把会话绑到 `World.current` 并写入所在港。`SaveFile` 存取 `user://save.json`（带 `version`，
+  先写临时文件再改名）；`World.from_dict` 是信任边界——缺字段/类型不对/未知港一律整档拒收返回 null。
+  主菜单「開始遊戲」= `World.new_game()`、「繼續航程」读档进港（存档读不出来则禁用）；进港统一走 `PortScene3D.enter`，
+  港口场景路径只在 `data/ports.json`（`Market.port_scene`）。测试存档一律写 `user://test_tmp/`，不碰真存档。
+  待办：`day` 尚无推进者（等航海）；`EventScript` 不在存档里（等随包剧本）。
 - [~] 交易所买卖（贸易的第一步，仅里斯本一港）：货物表 `godot/data/goods.json` + 港口表 `godot/data/ports.json`
   （按港号列买进单价，卖出 = 九折去尾；没列价的货物该港不交易；名称与价格均自撰）→ sim 层 `Market`。
   `PlayerState` 加 `cargo`（货物→件数）/ `hold`（船舱 100 件，占位）/ `buy` / `sell`。

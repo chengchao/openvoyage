@@ -85,7 +85,7 @@ func test_bank_deposit_moves_gold_to_bank() -> void:
 	assert_not_null(f.amount_entry, "存款应弹金额输入")
 	f.amount_entry.adjust(AmountEntry.STEP_BIG)
 	f.amount_entry.confirm()
-	assert_eq(f.player_state.gold, DoorFlow.STARTING_GOLD - 1000)
+	assert_eq(f.player_state.gold, World.STARTING_GOLD - 1000)
 	assert_eq(f.player_state.bank, 1000)
 	assert_null(f.amount_entry, "确认后金额模态关闭")
 
@@ -106,7 +106,7 @@ func test_bank_cancel_leaves_funds_unchanged() -> void:
 	f.facility_scene.menu_selected.emit(0, "存款")
 	f.amount_entry.adjust(AmountEntry.STEP_BIG)
 	f.amount_entry.cancel()
-	assert_eq(f.player_state.gold, DoorFlow.STARTING_GOLD, "取消不动钱")
+	assert_eq(f.player_state.gold, World.STARTING_GOLD, "取消不动钱")
 	assert_null(f.amount_entry)
 
 
@@ -132,7 +132,7 @@ func test_market_buy_goes_through_pick_list_and_amount() -> void:
 	assert_eq(f.amount_entry.amount(), 11)
 	f.amount_entry.confirm()
 	assert_eq(f.player_state.cargo, {good["key"]: 11})
-	assert_eq(f.player_state.gold, DoorFlow.STARTING_GOLD - 11 * good["buy"])
+	assert_eq(f.player_state.gold, World.STARTING_GOLD - 11 * good["buy"])
 	assert_true(f.facility_scene.has_dialogue(), "店主报出成交")
 
 
@@ -207,3 +207,31 @@ func test_unopened_menu_item_keeps_menu_open() -> void:
 	assert_not_null(f.game_menu)
 	f.close_menu()
 	assert_null(f.game_menu)
+
+
+func test_saving_from_the_game_menu_writes_the_save_file() -> void:
+	var path := "user://test_tmp/door_flow.json"
+	DirAccess.remove_absolute(path)
+	var f := _flow()
+	f.session.save_path = path
+	f.player_state.deposit(400)
+	f.open_menu()
+	f.game_menu.move_category(3)
+	f.game_menu.move_item(1)
+	_press("ui_accept")
+	assert_eq(SaveFile.load(path).player.bank, 400)
+	assert_string_contains(f.game_menu.detail_text(), "進度已儲存")
+	DirAccess.remove_absolute(path)
+
+
+func test_loading_with_no_save_stays_in_the_menu_and_says_so() -> void:
+	var path := "user://test_tmp/door_flow.json"
+	DirAccess.remove_absolute(path)
+	var f := _flow()
+	f.session.save_path = path
+	f.open_menu()
+	f.game_menu.move_category(3)
+	f.game_menu.move_item(2)
+	_press("ui_accept")
+	assert_not_null(f.game_menu, "没有存档：留在选单")
+	assert_string_contains(f.game_menu.detail_text(), "還沒有存檔")

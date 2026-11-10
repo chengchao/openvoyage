@@ -3,7 +3,6 @@
 class_name DoorFlow
 extends Node
 
-const STARTING_GOLD := PortSession.STARTING_GOLD
 const TITLE_SCENE := "res://game/main.tscn"
 
 var session := PortSession.new()
@@ -97,6 +96,12 @@ func _on_menu_action(action: StringName) -> void:
 			get_tree().change_scene_to_file(TITLE_SCENE)
 		&"quit":
 			get_tree().quit()
+		&"save":
+			session.save_game()
+		&"load":
+			var loaded := session.load_game()
+			if loaded != null:
+				PortScene3D.enter(get_tree(), loaded)
 
 
 func _say(line: String) -> void:

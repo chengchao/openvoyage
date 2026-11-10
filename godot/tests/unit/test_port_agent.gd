@@ -4,11 +4,22 @@ extends GutTest
 const MARKET := 0
 const TAVERN := 1
 const BANK := 8
+const SAVE_PATH := "user://test_tmp/port_agent.json"
+
+
+func before_each() -> void:
+	World.current = null
+	DirAccess.remove_absolute(SAVE_PATH)
+
+
+func after_all() -> void:
+	DirAccess.remove_absolute(SAVE_PATH)
 
 
 func _agent() -> PortAgent:
 	var port: PortScene3D = load("res://game/port3d/ports/lisbon.tscn").instantiate()
 	add_child_autofree(port)
+	port.doors.session.save_path = SAVE_PATH
 	return PortAgent.new(port)
 
 
@@ -36,7 +47,8 @@ func test_observation_at_spawn() -> void:
 	var obs := agent.observe()
 	assert_eq(obs["mode"], "walking")
 	assert_eq(obs["position"].size(), 3)
-	assert_eq(obs["gold"], PortSession.STARTING_GOLD)
+	assert_eq(obs["gold"], World.STARTING_GOLD)
+	assert_eq(obs["day"], 1)
 	var tavern := _door(obs, TAVERN)
 	assert_eq(tavern.get("name"), "酒馆", "观察里列出各门：槽号、名字、位置")
 	assert_gt(obs["doors"].size(), 1)
@@ -123,7 +135,7 @@ func test_agent_trades_at_the_market() -> void:
 	obs = agent.observe()
 	assert_eq(obs["mode"], "facility_menu")
 	assert_eq(obs["cargo"], {good["key"]: 4})
-	assert_eq(obs["gold"], PortSession.STARTING_GOLD - 4 * good["buy"])
+	assert_eq(obs["gold"], World.STARTING_GOLD - 4 * good["buy"])
 	assert_ne(obs["said"], "")
 
 
@@ -143,7 +155,7 @@ func test_agent_walks_into_the_bank_and_deposits() -> void:
 	assert_true(await agent.act({"do": "choose", "index": 0}))
 	assert_true(await agent.act({"do": "amount", "value": 500}))
 	obs = agent.observe()
-	assert_eq([obs["gold"], obs["bank"]], [PortSession.STARTING_GOLD - 500, 500])
+	assert_eq([obs["gold"], obs["bank"]], [World.STARTING_GOLD - 500, 500])
 
 
 func test_agent_cancels_a_pick() -> void:
@@ -157,3 +169,35 @@ func test_agent_cancels_a_pick() -> void:
 	var obs := agent.observe()
 	assert_eq(obs["mode"], "facility_menu")
 	assert_false(obs.has("pick"))
+
+
+func test_port_scene_plays_on_the_current_world() -> void:
+	var w := World.new_game()
+	w.port_id = 9
+	w.day = 5
+	w.player.deposit(150)
+	var obs := _agent().observe()
+	assert_eq([obs["gold"], obs["bank"], obs["day"]], [World.STARTING_GOLD - 150, 150, 5])
+	assert_eq(w.port_id, 0, "进了里斯本，世界里的所在港跟着变")
+
+
+func test_progress_survives_a_scene_change() -> void:
+	var first := _agent()
+	first.port.doors.open(BANK)
+	await first.act({"do": "choose", "index": 0})
+	await first.act({"do": "amount", "value": 800})
+	first.port.free()
+	var obs := _agent().observe()
+	assert_eq([obs["gold"], obs["bank"]], [World.STARTING_GOLD - 800, 800], "新场景接着同一局")
+
+
+func test_agent_saves_from_the_game_menu() -> void:
+	var agent := _agent()
+	await wait_seconds(0.2)
+	assert_false(await agent.act({"do": "menu_activate"}), "没开着选单")
+	await agent.act({"do": "menu"})
+	assert_false(await agent.act({"do": "menu_activate"}), "光标在尚未開放的项上")
+	await agent.act({"do": "menu_select", "category": 3, "item": 1})
+	assert_true(await agent.act({"do": "menu_activate"}))
+	assert_string_contains(agent.observe()["game_menu"]["detail"], "進度已儲存")
+	assert_true(SaveFile.exists(SAVE_PATH))

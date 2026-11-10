@@ -26,8 +26,8 @@
     ]},
     {"key": "system", "label": "系統", "items": [
       {"key": "settings", "label": "環境設定", "desc": "調整音樂、音效與訊息速度。", "action": ""},
-      {"key": "save", "label": "儲存進度", "desc": "把目前的進度寫入存檔。", "action": ""},
-      {"key": "load", "label": "讀取進度", "desc": "從存檔繼續先前的航程。", "action": ""},
+      {"key": "save", "label": "儲存進度", "desc": "把目前的進度寫入存檔。", "action": "save"},
+      {"key": "load", "label": "讀取進度", "desc": "從存檔繼續先前的航程。", "action": "load"},
       {"key": "title", "label": "回到標題", "desc": "放棄目前的進度，回到標題畫面。", "action": "title"},
       {"key": "quit", "label": "結束遊戲", "desc": "關閉遊戲。", "action": "quit"}
     ]}

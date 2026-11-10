@@ -57,6 +57,11 @@ static func port_name(port_id: int) -> String:
 	return _port(port_id).get("name", "")
 
 
+## 该港的港口场景路径；未知港返回 ""。
+static func port_scene(port_id: int) -> String:
+	return _port(port_id).get("scene", "")
+
+
 ## 仅供测试：清空静态缓存。
 static func _reset() -> void:
 	_goods = []

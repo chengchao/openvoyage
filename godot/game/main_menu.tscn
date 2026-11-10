@@ -19,9 +19,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -140.0
-offset_top = -90.0
+offset_top = -125.0
 offset_right = 140.0
-offset_bottom = 90.0
+offset_bottom = 125.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 16
@@ -39,7 +39,12 @@ horizontal_alignment = 1
 [node name="StartButton" type="Button" parent="VBox"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "开始 / Start"
+text = "開始遊戲"
+
+[node name="ContinueButton" type="Button" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "繼續航程"
 
 [node name="ViewButton" type="Button" parent="VBox"]
 unique_name_in_owner = true

@@ -17,7 +17,8 @@ func _story_session(slot: int, port_id := 0) -> PortSession:
 			{"op": "end"},
 		]}],
 	}
-	var s := PortSession.new(port_id)
+	var s := PortSession.new()
+	s.port_id = port_id
 	s.event_script = EventScript.new(events, PackedStringArray(["〔店主〕\n請進！"]))
 	s.game_state = GameState.new(1, 0)
 	return s
@@ -66,8 +67,8 @@ func test_deposit_goes_through_amount_entry() -> void:
 	s.enter_door(BANK)
 	assert_eq(s.choose(0), "", "存款进入金额输入，无即时反馈")
 	assert_eq(s.mode, PortSession.Mode.AMOUNT_ENTRY)
-	assert_eq(s.amount_cap, PortSession.STARTING_GOLD, "存款上限 = 现金")
-	assert_eq(s.confirm_amount(1000), "現金 %d　存款 1000" % (PortSession.STARTING_GOLD - 1000))
+	assert_eq(s.amount_cap, World.STARTING_GOLD, "存款上限 = 现金")
+	assert_eq(s.confirm_amount(1000), "現金 %d　存款 1000" % (World.STARTING_GOLD - 1000))
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
 	assert_eq(s.player_state.bank, 1000)
 
@@ -86,7 +87,7 @@ func test_withdraw_cap_is_bank_balance() -> void:
 func test_nothing_to_move_reports_balance_and_stays_in_menu() -> void:
 	var s := PortSession.new()
 	s.enter_door(BANK)
-	assert_eq(s.choose(1), "現金 %d　存款 0" % PortSession.STARTING_GOLD, "没有存款可提")
+	assert_eq(s.choose(1), "現金 %d　存款 0" % World.STARTING_GOLD, "没有存款可提")
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
 
 
@@ -96,14 +97,14 @@ func test_cancel_amount_moves_no_money() -> void:
 	s.choose(0)
 	assert_true(s.cancel_amount())
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
-	assert_eq(s.player_state.gold, PortSession.STARTING_GOLD)
+	assert_eq(s.player_state.gold, World.STARTING_GOLD)
 
 
 func test_amount_over_cap_is_rejected() -> void:
 	var s := PortSession.new()
 	s.enter_door(BANK)
 	s.choose(0)
-	assert_eq(s.confirm_amount(PortSession.STARTING_GOLD + 1), "", "超过上限不搬钱")
+	assert_eq(s.confirm_amount(World.STARTING_GOLD + 1), "", "超过上限不搬钱")
 	assert_eq(s.mode, PortSession.Mode.AMOUNT_ENTRY, "仍在输入")
 	assert_eq(s.player_state.bank, 0)
 
@@ -155,7 +156,8 @@ func test_open_menu_blocks_port_actions() -> void:
 
 
 func test_menu_detail_for_status_shows_port_and_balance() -> void:
-	var s := PortSession.new(7)
+	var s := PortSession.new()
+	s.port_id = 7
 	var lines := s.menu_detail(0, 3).split("\n")
 	assert_eq(lines[0], GameMenu.items(0)[3]["desc"])
 	assert_string_contains(lines[-1], "7")
@@ -175,7 +177,7 @@ const SELL := 1
 const PRICES := 3
 
 
-func _at_market(gold := PortSession.STARTING_GOLD) -> PortSession:
+func _at_market(gold := World.STARTING_GOLD) -> PortSession:
 	var s := PortSession.new()
 	s.player_state = PlayerState.new(gold, 0)
 	s.enter_door(MARKET)
@@ -193,7 +195,7 @@ func test_buying_goes_pick_then_amount_then_back_to_menu() -> void:
 	assert_eq(s.mode, PortSession.Mode.AMOUNT_ENTRY)
 	var line := s.confirm_amount(5)
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
-	assert_eq(s.player_state.gold, PortSession.STARTING_GOLD - 5 * good["buy"])
+	assert_eq(s.player_state.gold, World.STARTING_GOLD - 5 * good["buy"])
 	assert_eq(s.player_state.cargo, {good["key"]: 5})
 	assert_string_contains(line, good["label"], "店主报出成交")
 
@@ -272,7 +274,7 @@ func test_buying_then_selling_in_the_same_port_loses_the_spread() -> void:
 	s.choose(SELL)
 	s.pick(0)
 	s.confirm_amount(10)
-	assert_eq(s.player_state.gold, PortSession.STARTING_GOLD - 10 * (good["buy"] - good["sell"]))
+	assert_eq(s.player_state.gold, World.STARTING_GOLD - 10 * (good["buy"] - good["sell"]))
 
 
 func test_cancel_pick_returns_to_menu_without_trading() -> void:
@@ -281,7 +283,7 @@ func test_cancel_pick_returns_to_menu_without_trading() -> void:
 	assert_true(s.cancel_pick())
 	assert_eq(s.mode, PortSession.Mode.FACILITY_MENU)
 	assert_eq(s.pick_options, [])
-	assert_eq(s.player_state.gold, PortSession.STARTING_GOLD)
+	assert_eq(s.player_state.gold, World.STARTING_GOLD)
 
 
 func test_cancel_amount_after_pick_trades_nothing() -> void:
@@ -327,3 +329,82 @@ func test_menu_detail_for_cargo_lists_what_is_held() -> void:
 	assert_string_contains(detail, good["label"])
 	assert_string_contains(detail, "12")
 	assert_ne(detail, empty)
+
+
+const SAVE_PATH := "user://test_tmp/port_session.json"
+const SYSTEM := 3
+const SAVE := 1
+const LOAD := 2
+
+
+func after_all() -> void:
+	DirAccess.remove_absolute(SAVE_PATH)
+
+
+func _in_menu(world: World = null) -> PortSession:
+	DirAccess.remove_absolute(SAVE_PATH)
+	var s := PortSession.new(world)
+	s.save_path = SAVE_PATH
+	s.open_menu()
+	return s
+
+
+func test_session_plays_on_the_world_it_is_given() -> void:
+	var w := World.new()
+	var s := PortSession.new(w)
+	s.port_id = 4
+	s.enter_door(BANK)
+	s.choose(0)
+	s.confirm_amount(700)
+	assert_eq([w.player.gold, w.player.bank, w.port_id], [World.STARTING_GOLD - 700, 700, 4])
+	var next := PortSession.new(w)
+	assert_eq(next.balance_line(), s.balance_line(), "换一个会话（换场景）看到的是同一份状态")
+
+
+func test_save_writes_the_world_and_the_detail_pane_confirms() -> void:
+	var s := _in_menu()
+	s.world.player.deposit(250)
+	assert_false(s.menu_detail(SYSTEM, SAVE).contains("已儲存"))
+	assert_true(s.save_game())
+	assert_string_contains(s.menu_detail(SYSTEM, SAVE), "進度已儲存")
+	assert_false(s.menu_detail(SYSTEM, LOAD).contains("已儲存"), "提示只挂在儲存那一项")
+	assert_eq(SaveFile.load(SAVE_PATH).player.bank, 250)
+	s.close_menu()
+	s.open_menu()
+	assert_false(s.menu_detail(SYSTEM, SAVE).contains("已儲存"), "重开选单不留旧提示")
+
+
+func test_save_and_load_only_work_from_the_game_menu() -> void:
+	var s := _in_menu()
+	s.save_game()
+	s.close_menu()
+	DirAccess.remove_absolute(SAVE_PATH)
+	assert_false(s.save_game())
+	assert_false(SaveFile.exists(SAVE_PATH))
+
+
+func test_load_returns_the_saved_world() -> void:
+	var s := _in_menu()
+	s.world.player.deposit(250)
+	s.save_game()
+	s.world.player.withdraw(250)
+	var loaded := s.load_game()
+	assert_not_null(loaded)
+	assert_ne(loaded, s.world)
+	assert_eq(loaded.player.bank, 250)
+
+
+func test_load_without_a_save_says_so() -> void:
+	var s := _in_menu()
+	assert_null(s.load_game())
+	assert_string_contains(s.menu_detail(SYSTEM, LOAD), "還沒有存檔")
+
+
+func test_load_of_a_corrupt_save_says_so() -> void:
+	var s := _in_menu()
+	s.save_game()
+	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	f.store_string("{")
+	f.close()
+	assert_null(s.load_game())
+	assert_string_contains(s.menu_detail(SYSTEM, LOAD), "損毀")

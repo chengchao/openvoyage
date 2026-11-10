@@ -22,11 +22,20 @@ var doors := DoorFlow.new()
 @onready var _camera: Camera3D = $Camera3D
 
 
+## 让 world 成为当前世界，并切到它所在港的场景。
+static func enter(tree: SceneTree, world: World) -> void:
+	World.current = world
+	tree.change_scene_to_file(Market.port_scene(world.port_id))
+
+
 func _ready() -> void:
 	player = Avatar3D.new()
 	player.name = "Player"
 	add_child(player)
 	player.global_position = ($Spawn as Marker3D).global_position
+	if World.current == null:
+		World.new_game()  # 直接运行港口场景（编辑器 F6、测试）时没有主菜单替它开局
+	doors.session.world = World.current
 	doors.port_id = port_id
 	add_child(doors)
 	_doors.assign(find_children("*", "PortDoor", true, false))

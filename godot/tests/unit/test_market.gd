@@ -39,3 +39,9 @@ func test_port_name() -> void:
 func test_unknown_port_has_no_market() -> void:
 	assert_eq(Market.goods(NO_SUCH_PORT), [])
 	assert_eq(Market.port_name(NO_SUCH_PORT), "")
+
+
+func test_port_scene_comes_from_the_ports_table() -> void:
+	assert_eq(Market.port_scene(0), "res://game/port3d/ports/lisbon.tscn")
+	assert_true(ResourceLoader.exists(Market.port_scene(0)))
+	assert_eq(Market.port_scene(999), "", "未知港")

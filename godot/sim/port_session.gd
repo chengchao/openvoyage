@@ -1,18 +1,26 @@
 ## 港口玩法状态机（纯逻辑）：在港里走 → 撞门（剧情优先，docs/09 §9.A）→ 设施菜单 ⇄ 金额输入 → 离开；在港里走 ⇄ 游戏内选单。
 ## 交易所买卖多一步：设施菜单 → 选货 → 金额输入（件数）→ 设施菜单。
 ## 不依赖场景树：表现层（DoorFlow）按 mode 渲染，agent 可直接驱动。转换只在合法 mode 下生效，否则返回 false/""。
+## 玩家与剧情状态不在这里：都在 world 里，会话只是在它上面玩；换场景 = 换会话、不换 world。
 class_name PortSession
 extends RefCounted
 
 enum Mode { WALKING, CUTSCENE, FACILITY_MENU, AMOUNT_ENTRY, GAME_MENU, GOODS_PICK }
 
-const STARTING_GOLD := 2000  # 开局现金（占位，待开场剧情/存档校准）
 const NOT_OPEN_YET := "（此功能尚未開放）"
 
-var port_id: int
-var player_state := PlayerState.new(STARTING_GOLD, 0)
+var world: World
+var port_id: int:
+	get: return world.port_id
+	set(v): world.port_id = v
+var player_state: PlayerState:
+	get: return world.player
+	set(v): world.player = v
+var game_state: GameState:
+	get: return world.story
+	set(v): world.story = v
 var event_script: EventScript  # 为空 = 无剧情
-var game_state: GameState
+var save_path := SaveFile.DEFAULT_PATH  # 测试换成临时路径
 
 var mode := Mode.WALKING
 var slot := -1                       # 当前（或剧情后将进入的）设施槽号
@@ -24,10 +32,12 @@ var amount_prompt := ""
 var pick_prompt := ""                # GOODS_PICK 时有效
 var pick_options: Array = []         # GOODS_PICK 时有效：[{key, name, label, price, cap}]，label 带单价
 var pending_good: Dictionary = {}    # 买卖的 AMOUNT_ENTRY 时有效：选中的那一行
+var _menu_notes := {}                # GAME_MENU 时有效：选单 action → 这次开选单以来的存/读档结果
 
 
-func _init(p_port_id := 0) -> void:
-	port_id = p_port_id
+## 不给 world 就自带一局新的（不碰 World.current）。
+func _init(p_world: World = null) -> void:
+	world = p_world if p_world != null else World.new()
 
 
 func enter_door(door_slot: int) -> bool:
@@ -150,17 +160,39 @@ func open_menu() -> bool:
 func close_menu() -> bool:
 	if mode != Mode.GAME_MENU:
 		return false
+	_menu_notes.clear()
 	mode = Mode.WALKING
 	return true
 
 
-## 选单详情栏的文字：该项说明；主角情報追加所在港与资金，尚未開放的项追加提示。越界返回 ""。
+## 把 world 写进 save_path，结果显示在「儲存進度」的详情栏。只在选单里有效。
+func save_game() -> bool:
+	if mode != Mode.GAME_MENU:
+		return false
+	var ok := SaveFile.save(world, save_path)
+	_menu_notes[&"save"] = "進度已儲存。" if ok else "存檔寫入失敗，進度沒有儲存。"
+	return ok
+
+
+## 读出 save_path 里的 world；没有存档或读不了返回 null，原因显示在「讀取進度」的详情栏。
+## 只读不换：把它设为当前世界并进入其港口场景是表现层的事。
+func load_game() -> World:
+	if mode != Mode.GAME_MENU:
+		return null
+	var loaded := SaveFile.load(save_path)
+	if loaded == null:
+		_menu_notes[&"load"] = "存檔已損毀，無法讀取。" if SaveFile.exists(save_path) else "還沒有存檔。"
+	return loaded
+
+
+## 选单详情栏的文字：该项说明；主角情報追加所在港与资金，存/读档追加结果，尚未開放的项追加提示。越界返回 ""。
 func menu_detail(cat_index: int, item_index: int) -> String:
 	var rows := GameMenu.items(cat_index)
 	if item_index < 0 or item_index >= rows.size():
 		return ""
 	var text: String = rows[item_index].get("desc", "")
-	match GameMenu.action_of(cat_index, item_index):
+	var action := GameMenu.action_of(cat_index, item_index)
+	match action:
 		&"status":
 			text += "\n港口 %d　%s" % [port_id, balance_line()]
 		&"cargo":
@@ -169,6 +201,8 @@ func menu_detail(cat_index: int, item_index: int) -> String:
 			text += "\n船艙 %d/%d" % [player_state.cargo_used(), player_state.hold]
 		&"":
 			text += "\n" + NOT_OPEN_YET
+	if _menu_notes.has(action):
+		text += "\n" + _menu_notes[action]
 	return text
 
 
@@ -226,7 +260,7 @@ func _end_amount() -> void:
 
 
 func _story_at(door_slot: int) -> EventInterpreter:
-	if event_script == null or game_state == null or game_state.scenario < 0:
+	if event_script == null or game_state.scenario < 0:
 		return null
 	var label := event_script.find_entry(game_state.chapter, port_id, door_slot)
 	if label == "":

@@ -37,6 +37,7 @@ func observe() -> Dictionary:
 		"gold": s.player_state.gold,
 		"bank": s.player_state.bank,
 		"cargo": s.player_state.cargo.duplicate(),
+		"day": s.world.day,
 		"said": flow.last_said,
 	}
 	if flow.facility_scene != null:
@@ -61,6 +62,7 @@ func observe() -> Dictionary:
 ## {"do":"leave"} {"do":"pick","index":i}（选货） {"do":"amount","value":n}
 ## {"do":"cancel"}（取消选货或金额输入） {"do":"next"}（剧情下一句）
 ## {"do":"menu"}（开游戏内选单） {"do":"menu_select","category":i,"item":j}（移光标） {"do":"close"}（关选单）
+## {"do":"menu_activate"}（选定光标所在的选单项，如儲存進度；尚未開放的项返回 false）
 func act(a: Dictionary) -> bool:
 	var flow := port.doors
 	var mode := flow.session.mode
@@ -121,6 +123,14 @@ func act(a: Dictionary) -> bool:
 				return false
 			flow.game_menu.move_category(c - flow.game_menu.category_index())
 			flow.game_menu.move_item(j - flow.game_menu.item_index())
+			return true
+		"menu_activate":
+			if mode != PortSession.Mode.GAME_MENU:
+				return false
+			var gm := flow.game_menu
+			if GameMenu.action_of(gm.category_index(), gm.item_index()) == &"":
+				return false
+			gm.activate()
 			return true
 		"close":
 			if mode != PortSession.Mode.GAME_MENU:

@@ -2,9 +2,11 @@
 ##
 ## M0：按工程配置启动 → 主菜单可达（开始/退出按钮存在且已接线）→ 无错退出(0)。
 ## M2：从主菜单进入资料查看器，能从占位包成功打开至少 10 项图片。
-## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；交易所买进再卖出；走进银行存款；撞门剧情；ESC 开游戏内选单、移光标、关闭后照常走路。
+## 港口：开始按钮进灰盒里斯本，碰门进设施、退出；交易所买进再卖出；走进银行存款；撞门剧情；选单存档 → 提款 → 读档回到存档时的局面；回到標題 →「繼續航程」接着存档玩；ESC 开游戏内选单、移光标、关闭后照常走路。
 ## 运行：godot --headless --path godot -s tests/smoke/smoke_test.gd
 extends SceneTree
+
+const SAVE_PATH := "user://test_tmp/smoke_save.json"
 
 
 func _initialize() -> void:
@@ -37,7 +39,7 @@ func _smoke() -> bool:
 		return false
 
 	# Main 路由已把菜单意图接到导航/退出（开始/查看器/退出可响应）
-	for sig in ["start_requested", "view_requested", "quit_requested"]:
+	for sig in ["start_requested", "continue_requested", "view_requested", "quit_requested"]:
 		if menu.get_signal_connection_list(sig).is_empty():
 			push_error("%s 未接线" % sig)
 			return false
@@ -77,7 +79,11 @@ func _smoke() -> bool:
 		return false
 	if not await _story_at_door(port):
 		return false
-	return await _game_menu(port)
+	if not await _game_menu(port):
+		return false
+	var ok := await _save_and_load(port) and await _continue_from_title()
+	DirAccess.remove_absolute(SAVE_PATH)
+	return ok
 
 
 ## HD-2D 港口：主角朝一扇门走进去 → 进该门的设施 → 退出回到港口。
@@ -251,4 +257,71 @@ func _game_menu(port: PortScene3D) -> bool:
 		push_error("关闭选单后主角走不动")
 		return false
 	print("  HD-2D 港口：ESC 开选单 → 『%s』 → ESC 关 → 继续走路" % menu["items"][menu["item"]])
+	return true
+
+
+## 存读档：选单存档 → 把存款提光 → 选单读档 → 换进新的港口场景，现金/存款回到存档时。
+func _save_and_load(port: PortScene3D) -> bool:
+	var agent := PortAgent.new(port)
+	port.doors.session.save_path = SAVE_PATH
+	var saved := agent.observe()
+	if not (await agent.act({"do": "menu"}) and await agent.act({"do": "menu_select", "category": 3, "item": 1})
+			and await agent.act({"do": "menu_activate"}) and SaveFile.exists(SAVE_PATH)):
+		push_error("选单存档没写出存档文件：%s" % agent.observe())
+		return false
+	var note: String = agent.observe()["game_menu"]["detail"]
+	await agent.act({"do": "close"})
+
+	port.doors.open(8)
+	if not (await agent.act({"do": "choose", "index": 1}) and await agent.act({"do": "amount", "value": saved["bank"]})
+			and await agent.act({"do": "leave"})) or agent.observe()["bank"] != 0:
+		push_error("存档后提款走不通：%s" % agent.observe())
+		return false
+
+	if not (await agent.act({"do": "menu"}) and await agent.act({"do": "menu_select", "category": 3, "item": 2})
+			and await agent.act({"do": "menu_activate"})):
+		push_error("选单读档走不通：%s" % agent.observe())
+		return false
+	for _i in 5:
+		await physics_frame
+	var reloaded := current_scene as PortScene3D
+	if reloaded == null or reloaded == port:
+		push_error("读档后没有换进存档所在的港口场景")
+		return false
+	var obs := PortAgent.new(reloaded).observe()
+	if obs["mode"] != "walking" or obs["gold"] != saved["gold"] or obs["bank"] != saved["bank"] or saved["bank"] == 0:
+		push_error("读档后局面不是存档时的：%s（存档时现金 %d 存款 %d）" % [obs, saved["gold"], saved["bank"]])
+		return false
+	print("  存读档：『%s』→ 提光存款 → 读档 → 現金 %d　存款 %d" % [note.replace("\n", " "), obs["gold"], obs["bank"]])
+	return true
+
+
+## 选单「回到標題」→ 主菜单「繼續航程」→ 从存档文件进港（不靠内存里那一局）。
+func _continue_from_title() -> bool:
+	var agent := PortAgent.new(current_scene as PortScene3D)
+	var before := agent.observe()
+	if not (await agent.act({"do": "menu"}) and await agent.act({"do": "menu_select", "category": 3, "item": 3})
+			and await agent.act({"do": "menu_activate"})):
+		push_error("选单回到標題走不通")
+		return false
+	for _i in 3:
+		await process_frame
+	var menu := current_scene.get_node_or_null("MainMenu") as MainMenu
+	if menu == null:
+		push_error("回到標題后没有主菜单")
+		return false
+	World.current = null
+	menu.save_path = SAVE_PATH
+	(menu.get_node("%ContinueButton") as Button).pressed.emit()
+	for _i in 5:
+		await physics_frame
+	var port := current_scene as PortScene3D
+	if port == null:
+		push_error("繼續航程未进入港口场景")
+		return false
+	var obs := PortAgent.new(port).observe()
+	if obs["gold"] != before["gold"] or obs["bank"] != before["bank"]:
+		push_error("繼續航程后的局面不是存档里的：%s" % obs)
+		return false
+	print("  標題 →「繼續航程」→ 里斯本，現金 %d　存款 %d" % [obs["gold"], obs["bank"]])
 	return true

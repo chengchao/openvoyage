@@ -79,3 +79,23 @@ func sell(good: String, qty: int, unit_price: int) -> bool:
 	if cargo[good] == 0:
 		cargo.erase(good)
 	return true
+
+
+func to_dict() -> Dictionary:
+	return {"gold": gold, "bank": bank, "hold": hold, "cargo": cargo.duplicate()}
+
+
+## 不合法（缺字段、负数、非整数、货物超过船舱）返回 null。
+static func from_dict(d: Variant) -> PlayerState:
+	if typeof(d) != TYPE_DICTIONARY or typeof(d.get("cargo")) != TYPE_DICTIONARY:
+		return null
+	for k: String in ["gold", "bank", "hold"]:
+		if not World.is_whole(d.get(k), 0):
+			return null
+	var p := PlayerState.new(int(d["gold"]), int(d["bank"]))
+	p.hold = int(d["hold"])
+	for good: Variant in d["cargo"]:
+		if typeof(good) != TYPE_STRING or good == "" or not World.is_whole(d["cargo"][good], 1):
+			return null
+		p.cargo[good] = int(d["cargo"][good])
+	return p if p.cargo_used() <= p.hold else null

@@ -4,7 +4,6 @@ extends Node
 
 const MENU_SCENE := preload("res://game/main_menu.tscn")
 const VIEWER_SCENE := preload("res://game/asset_viewer.tscn")
-const NEW_GAME_SCENE := "res://game/port3d/ports/lisbon.tscn"
 
 var _current: Node = null
 
@@ -20,6 +19,7 @@ func _goto_menu() -> void:
 	var menu := MENU_SCENE.instantiate()
 	_swap(menu)
 	menu.start_requested.connect(_on_start_requested)
+	menu.continue_requested.connect(_on_continue_requested.bind(menu))
 	menu.view_requested.connect(_goto_viewer)
 	menu.quit_requested.connect(_on_quit_requested)
 
@@ -38,7 +38,13 @@ func _swap(node: Node) -> void:
 
 
 func _on_start_requested() -> void:
-	get_tree().change_scene_to_file(NEW_GAME_SCENE)
+	PortScene3D.enter(get_tree(), World.new_game())
+
+
+func _on_continue_requested(menu: MainMenu) -> void:
+	var saved := SaveFile.load(menu.save_path)
+	if saved != null:
+		PortScene3D.enter(get_tree(), saved)
 
 
 func _on_quit_requested() -> void:
