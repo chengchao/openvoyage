@@ -33,22 +33,6 @@ func test_slot_matches_index() -> void:
 		assert_eq(FacilityType.of(i).slot, i)
 
 
-func test_menu_index_maps_to_menudat_group() -> void:
-	assert_eq(FacilityType.of(8).menu_index, 0, "银行 → MENU.DAT 组 0 实机校正")
-	assert_eq(FacilityType.of(0).menu_index, 6, "交易所 → 组 6")
-	assert_eq(FacilityType.of(9).menu_index, 5, "道具屋 → 组 5 实机校正")
-	assert_eq(FacilityType.of(6).menu_index, 1, "行会 → 组 1 实机校正")
-	assert_eq(FacilityType.of(2).menu_index, 22, "造船所 → 组 22")
-
-
-func test_every_facility_has_unique_in_range_menu_index() -> void:
-	var seen := {}
-	for t in FacilityType.catalog():
-		assert_true(t.menu_index >= 0 and t.menu_index < 61, "%s menu_index 越界" % t.key)
-		assert_false(seen.has(t.menu_index), "menu_index 应唯一：%d" % t.menu_index)
-		seen[t.menu_index] = true
-
-
 func test_keys_are_unique() -> void:
 	var seen := {}
 	for t in FacilityType.catalog():

@@ -1,6 +1,6 @@
 # OpenVoyage — 大航海题材游戏的 Godot 开源引擎
 
-用 Godot 4.x (GDScript) 写的开源引擎，可运行玩家自备的《大航海時代 II》DOS 中文版数据（不附带任何原版素材）。完整规格与里程碑见 `docs/koukai2-godot-plan.md`，原版逆向资料见 `docs/koukai2-docs/`（LS11 压缩、像素格式、SNR 字节码、ZA_DAT 等均已破解并验证）。
+用 Godot 4.x (GDScript) 写的开源大航海题材游戏。**玩家游玩时不需要原版游戏**：发行包自带自制内容即可完整游玩（不附带任何原版素材），游戏运行时不读取原版数据。《大航海時代 II》DOS 中文版的数据只作开发时的参照（逆向资料 + `converter/`），用来理解原作的规则与结构。完整规格与里程碑见 `docs/koukai2-godot-plan.md`，原版逆向资料见 `docs/koukai2-docs/`（LS11 压缩、像素格式、SNR 字节码、ZA_DAT 等均已破解并验证）。
 
 ## 三条铁律（任何工作必须遵守）
 
@@ -36,6 +36,11 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   （当前为程序员美术：`godot/data/placeholder/` + 港图按图块种类上色）；港口版图也自制（`godot/data/ports/port_NNN.txt`，
   文本版图：`.`街 `=`码头 `~`海 `#`墙 `@`出生 `0-9ab`=设施门槽号），不用 PORTMAP/ZA_DAT 坐标。
   converter 已删除 KAO/PORTCHIP/PORTMAP/CHAR/GRAPH.DAT/IAP 图像提取；仍转换文本、剧本、字库与数据表。
+- **内容方针（2026-11-09）：游玩不依赖原版档**——文字、菜单、剧情、字体、数值表都要有自制版本随包发行，是唯一的数据源；
+  **已整体放弃原档兼容**：原版档与转换产物只供开发者参照，不是游戏的输入，也不做「玩家导入原档」功能。新代码不得读 `assets-converted/`。
+  设施菜单标签与店主招呼已自撰（`godot/data/facility_actions.json` 的 `label` / `greetings`，由 `FacilityActions` 解析）；
+  游戏代码里读转换产物的路径（TextDb / MesText / FontCodec / EventScript.load / 字模图集）已于 2026-11-09 删除。
+  下文「当前状态」里提到这些类与「真 MENU / MESSAGE.DAT 台词」之处是历史记录。待办：自撰开场剧情（EventScript 现在只能由代码注入，尚无随包剧本）。
 - 依赖原版档的测试标记 skip-if-missing。
 
 ## 当前状态

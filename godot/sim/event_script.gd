@@ -1,6 +1,5 @@
 ## 事件脚本程序（纯逻辑数据 + 查找，headless 可测）。
-## 消费 converter 产物 events/snrN.json（带标签的命令表脚本 + 触发入口表）与
-## text/snrN.json（列表式解码台词；say 的 id 'snrN/k' 即行下标）。
+## 数据 = 带标签的命令表脚本 + 触发入口表（events 字典）与台词列表（say 的 id 'snrN/k' 即行下标）。
 ## 控制流/语义在 EventInterpreter；此处只做章节脚本取用、标签→下标、入口查找、台词解析。
 class_name EventScript
 extends RefCounted
@@ -91,21 +90,3 @@ static func split_speaker(s: String) -> Dictionary:
 			return {"speaker": s.substr(NAME_OPEN.length(), close - NAME_OPEN.length()), "body": rest}
 	return {"speaker": "", "body": s}
 
-
-## 载入某剧本的事件脚本 + 台词。缺产物（CI/无原档）→ 空脚本，调用方据此回退、保持可玩。
-static func load(converted_dir: String, n: int) -> EventScript:
-	var events: Dictionary = {}
-	var words_ := PackedStringArray()
-	if converted_dir != "":
-		var ep := converted_dir.path_join("events/snr%d.json" % n)
-		if FileAccess.file_exists(ep):
-			var j: Variant = JSON.parse_string(FileAccess.get_file_as_string(ep))
-			if j is Dictionary:
-				events = j
-		var wp := converted_dir.path_join("text/snr%d.json" % n)
-		if FileAccess.file_exists(wp):
-			var jw: Variant = JSON.parse_string(FileAccess.get_file_as_string(wp))
-			if jw is Array:
-				for w in jw:
-					words_.append(str(w))
-	return EventScript.new(events, words_)

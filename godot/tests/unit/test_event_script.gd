@@ -1,5 +1,4 @@
 ## EventScript（events/ 命令表脚本 + text/ 台词 + 触发入口查找）单元测试。纯逻辑、headless。
-## 末尾含真原档（assets-converted）skip-if-missing 用例：SNR1 公爵府 chapter 0 演到 end。
 extends GutTest
 
 const EVENTS := {
@@ -75,68 +74,3 @@ func test_find_entry_default_and_wildcard() -> void:
 	# 主角轨阈值 0x64：港 ≥ 0x64 时 0xA3 通配失效
 	assert_eq(s.find_entry(0, 5, 5), "L_stage", "港5<0x64 → a305 通配命中设施5")
 	assert_eq(s.find_entry(0, 0x70, 5), "", "港0x70≥0x64 → 通配失效，且非港0 无兜底")
-
-
-func test_load_missing_dir_is_empty_and_safe() -> void:
-	var s := EventScript.load("", 1)
-	assert_eq(s.chapter_count(), 0, "缺产物→空脚本，保证 headless 可玩")
-	assert_eq(s.find_entry(0, 0, 7), "")
-
-
-# ----------------------------------------------------- 原版档层（skip-if-missing）--
-
-func _real_snr1() -> EventScript:
-	var dir := TextDb.converted_dir()
-	var s := EventScript.load(dir, 1)
-	return s
-
-
-func test_real_snr1_chapter0_butler_refusal_line() -> void:
-	# flag0=set, flag5=clear → 管家挡门单句（$n 代入）。引擎验证的 AC/AD 分支极性。
-	var s := _real_snr1()
-	if s.chapter_count() == 0:
-		pending("no assets-converted/events/snr1.json (set up original game + run converter)")
-		return
-	var entry := s.find_entry(0, 0, 7)   # 港0 里斯本, 设施7 house = 公爵府
-	assert_ne(entry, "", "应有公爵府入口")
-	var st := GameState.new(1, 0)
-	st.set_name("n", "阿明")
-	st.set_flag(0, true)
-	st.set_flag(5, false)
-	var it := EventInterpreter.new(s, st, 0)
-	assert_true(it.start(entry))
-	var bodies: Array = []
-	for _i in range(500):
-		var b := it.next_beat()
-		if b["kind"] == "line":
-			bodies.append(b["body"])
-		if b["kind"] == "end":
-			break
-	assert_eq(bodies.size(), 1, "该旗标态下只演一句")
-	assert_eq(bodies[0].sha256_text(), "51fd327b9f202dc92111a6020a64f5de4a724f4d0cb42d45963341bece0f9bf2", "$n 已代入的管家挡门台词（原文不入库，比哈希）")
-
-
-func test_real_snr1_chapter0_intro_runs_to_end() -> void:
-	# 全旗标 clear（首次游玩态）→ 公爵府正剧情：父亲召见主角，演到 end（台词比哈希，原文不入库）。
-	var s := _real_snr1()
-	if s.chapter_count() == 0:
-		pending("no assets-converted/events/snr1.json")
-		return
-	var st := GameState.new(1, 0)
-	st.set_name("n", "阿明")
-	st.set_name("s", "大人")
-	var it := EventInterpreter.new(s, st, 0)
-	assert_true(it.start(s.find_entry(0, 0, 7)))
-	var bodies: Array = []
-	var ended := false
-	for _i in range(2000):
-		var b := it.next_beat()
-		if b["kind"] == "line":
-			bodies.append(b["body"])
-		if b["kind"] == "end":
-			ended = true
-			break
-	assert_true(ended, "公爵府开场应跑到 end，不挂起")
-	assert_gt(bodies.size(), 10, "开场是多句对话")
-	assert_eq(bodies[0].sha256_text(), "56aa5386f11d5b335aca98e2df9bc9764fbb2833db5f53c090110c5d9e0a6677", "公爵府开场首句")
-	assert_true(bodies[1].contains("阿明"), "$n 代入到公爵台词")

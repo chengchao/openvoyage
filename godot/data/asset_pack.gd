@@ -1,7 +1,7 @@
-## 薄加载层：读资产清单（占位包或转换产物）并按需解码 PNG。
+## 薄加载层：读资产清单并按需解码 PNG。
 ##
 ## 用 Image.load 直接从磁盘解码 PNG（不依赖 Godot 的导入产物 .ctex），
-## 因此对 res:// 占位图与 assets-converted/ 外部转换产物可用同一套路径逻辑。
+## 因此不需要先跑 --import。
 class_name AssetPack
 extends RefCounted
 
