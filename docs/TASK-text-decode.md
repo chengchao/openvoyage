@@ -85,7 +85,21 @@ to_font_code 测试通过，再去定位 DOSBox‑X 中文字库。」
 
 ### 已确证可用（勿重做）
 容器偏移表解析、控制码（00/0A/24）、标点行（0x81→，。？！）、`to_font_code` 变换
-（MAIN.EXE 0x43A1 反汇编，回归测试 `tests/test_text_wip.py`）。
+（MAIN.EXE 0x43A1 反汇编）。原实现 `text_wip.py` 已于 2026-11-11 删除（文本解码已由 `text_decode` +
+`code_table.json` 取代），变换公式留档如下（返回外部中文系統字库 int 15h AX=5000h 的字模码，非汉字返回 None）：
+
+```python
+def to_font_code(hi, lo):
+    if not (0x80 < hi < 0xF0):
+        return None
+    h = ((hi - (0x70 if hi < 0xA0 else 0xB0)) << 1) & 0xFF
+    l = lo - 1 if lo >= 0x80 else lo
+    if l < 0x9E:
+        h -= 1
+    else:
+        l -= 0x5E
+    return (h << 8) + ((l - 0x1F) & 0xFF)
+```
 
 ### ⭐ 交接给逆向侧的精确任务（最后一跳）
 反汇编**「取字模位图」例程** = `to_font_code`(@0x43A1) 返回值的**消费方**：拿到 font code 后是

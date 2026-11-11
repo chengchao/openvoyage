@@ -233,6 +233,7 @@ func test_loading_with_no_save_stays_in_the_menu_and_says_so() -> void:
 	f.game_menu.move_category(3)
 	f.game_menu.move_item(2)
 	_press("ui_accept")
+	_press("ui_accept")
 	assert_not_null(f.game_menu, "没有存档：留在选单")
 	assert_string_contains(f.game_menu.detail_text(), "還沒有存檔")
 
@@ -280,3 +281,23 @@ func test_arrival_story_plays_then_returns_to_walking_without_a_facility() -> vo
 	assert_null(f.facility_scene)
 	f.arrive()
 	assert_false(f.is_busy(), "再次抵港不重演")
+
+
+func test_one_press_on_load_does_not_throw_away_progress() -> void:
+	var entered: Array[World] = []
+	var f := _flow()
+	f.session.save_path = "user://test_tmp/door_flow.json"
+	f.enter_port = func(_tree: SceneTree, w: World) -> void: entered.append(w)
+	f.open_menu()
+	f.session.save_game()
+	f.game_menu.move_category(3)
+	f.game_menu.move_item(2)
+	_press("ui_accept")
+	assert_eq(entered.size(), 0, "第一下只提示")
+	assert_string_contains(f.game_menu.detail_text(), "再按一次確定")
+	f.game_menu.move_item(1)
+	f.game_menu.move_item(-1)
+	_press("ui_accept")
+	assert_eq(entered.size(), 0, "移开再回来要重新确认")
+	_press("ui_accept")
+	assert_eq(entered.size(), 1, "连按第二下才读档")

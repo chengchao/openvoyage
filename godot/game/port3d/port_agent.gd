@@ -73,7 +73,7 @@ func observe() -> Dictionary:
 ## {"do":"leave"} {"do":"pick","index":i}（单选：选货，或选出航目的地——选定即启航） {"do":"amount","value":n}
 ## {"do":"cancel"}（取消单选或金额输入） {"do":"next"}（剧情下一句）
 ## {"do":"menu"}（开游戏内选单） {"do":"menu_select","category":i,"item":j}（移光标） {"do":"close"}（关选单）
-## {"do":"menu_activate"}（选定光标所在的选单项，如儲存進度；尚未開放的项返回 false）
+## {"do":"menu_activate"}（选定光标所在的选单项，如儲存進度；尚未開放的项返回 false；讀取進度/回到標題/結束遊戲要连发两次）
 func act(a: Dictionary) -> bool:
 	var flow := port.doors
 	var mode := flow.session.mode

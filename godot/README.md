@@ -7,7 +7,7 @@ Godot 4.7 + GDScript。OpenVoyage 引擎的可玩骨架；逻辑（`sim/`）与�
 
 | 目录 | 职责 |
 |---|---|
-| `sim/` | 纯逻辑 `RefCounted` 类（不依赖场景树），如 `GameConfig` |
+| `sim/` | 纯逻辑 `RefCounted` 类（不依赖场景树），如 `PortSession` |
 | `game/` | 场景、UI、输入（薄壳）：`main`（主控制器）、`main_menu`、`new_game_stub` |
 | `data/` | 薄加载层 + 占位资产清单（`data/placeholder/manifest.json`） |
 | `tests/unit/` | GUT 单元测试 |

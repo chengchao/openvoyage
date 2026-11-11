@@ -92,6 +92,8 @@ func detail_text() -> String:
 
 ## 换分类（回绕），项光标回到首项。
 func move_category(delta: int) -> void:
+	if delta != 0:
+		_session.disarm()
 	_cat = posmod(_cat + delta, maxi(1, GameMenu.categories().size()))
 	_item = 0
 	_rebuild_items()
@@ -99,6 +101,8 @@ func move_category(delta: int) -> void:
 
 ## 移动项光标（回绕）。
 func move_item(delta: int) -> void:
+	if delta != 0:  # 点同一项不算移开，连点两下才能确认
+		_session.disarm()
 	_item = posmod(_item + delta, maxi(1, GameMenu.items(_cat).size()))
 	_refresh()
 

@@ -421,7 +421,7 @@ func _save_and_load(port: PortScene3D) -> bool:
 		return false
 
 	if not (await agent.act({"do": "menu"}) and await agent.act({"do": "menu_select", "category": 3, "item": 2})
-			and await agent.act({"do": "menu_activate"})):
+			and await agent.act({"do": "menu_activate"}) and await agent.act({"do": "menu_activate"})):
 		push_error("选单读档走不通：%s" % agent.observe())
 		return false
 	for _i in 5:
@@ -444,7 +444,7 @@ func _continue_from_title() -> bool:
 	var agent := PortAgent.new(current_scene as PortScene3D)
 	var before := agent.observe()
 	if not (await agent.act({"do": "menu"}) and await agent.act({"do": "menu_select", "category": 3, "item": 3})
-			and await agent.act({"do": "menu_activate"})):
+			and await agent.act({"do": "menu_activate"}) and await agent.act({"do": "menu_activate"})):
 		push_error("选单回到標題走不通")
 		return false
 	for _i in 3:
