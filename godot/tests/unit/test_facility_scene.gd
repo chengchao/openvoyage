@@ -31,7 +31,7 @@ func test_bank_menu_comes_with_the_game() -> void:
 func test_menu_fits_inside_the_panel_for_every_facility() -> void:
 	for ft in FacilityType.catalog():
 		var s := _scene(ft.slot)
-		await wait_frames(2)
+		await wait_physics_frames(2)
 		var last: Label = s._menu_items[-1]
 		var panel := last.get_parent().get_parent() as Control
 		assert_lte(last.get_global_rect().end.y, panel.get_global_rect().end.y, "%s 的菜单超出面板" % ft.key)

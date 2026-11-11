@@ -19,11 +19,11 @@ jobs:
     name: Godot GUT + 冒烟验收
     runs-on: ubuntu-22.04
     env:
-      GODOT_VERSION: "4.3"
+      GODOT_VERSION: "4.7.2"
     steps:
       - uses: actions/checkout@v4
 
-      - name: 下载 Godot 4.3 headless
+      - name: 下载 Godot headless
         run: |
           set -e
           url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"

@@ -1,6 +1,6 @@
 # Godot 工程（M0：walking skeleton）
 
-Godot 4.3 + GDScript。OpenVoyage 引擎的可玩骨架；逻辑（`sim/`）与表现（`game/`）分离，
+Godot 4.7 + GDScript。OpenVoyage 引擎的可玩骨架；逻辑（`sim/`）与表现（`game/`）分离，
 全部测试 headless 可跑。
 
 ## 目录

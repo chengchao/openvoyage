@@ -19,7 +19,7 @@ jobs:
     name: 导出 Windows / Linux / macOS
     runs-on: ubuntu-22.04
     env:
-      GODOT_VERSION: "4.3"
+      GODOT_VERSION: "4.7.2"
     steps:
       - uses: actions/checkout@v4
 

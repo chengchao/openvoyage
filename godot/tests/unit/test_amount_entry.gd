@@ -81,7 +81,7 @@ func test_clicked_button_does_not_steal_the_enter_key() -> void:
 
 func test_buttons_fit_inside_the_panel_on_screen() -> void:
 	var e := _entry(99999, 0)
-	await wait_frames(2)
+	await wait_physics_frames(2)
 	var panel: Panel = e.find_children("*", "Panel", true, false)[0]
 	var screen := Rect2(Vector2.ZERO, e.get_viewport().get_visible_rect().size)
 	assert_true(screen.encloses(panel.get_global_rect()), "面板 %s 超出屏幕" % panel.get_global_rect())
