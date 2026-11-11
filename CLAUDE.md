@@ -102,7 +102,7 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   剧情查找、存取款、金额上限都在这里）；`DoorFlow` 只按 mode 建/拆剧情、设施面板、金额输入、游戏内选单。
   **agent 接口 `PortAgent`**：observe() 返回可序列化局面，act() 执行 walk/choose/leave/amount/cancel/next，headless 可玩。
   代码 lint 写在 `tests/unit/test_lint.gd`（随 GUT 跑；规则表：process-mode-disabled / full-rect-mouse-filter /
-  gui-input-mouse-filter / accept-needs-mouse，违规须修或同行 `# lint-allow: <id>` 写明理由）。
+  gui-input-mouse-filter / accept-needs-mouse / input-state-gate，违规须修或同行 `# lint-allow: <id>` 写明理由）。
   关卡几何 lint 写在 `tests/unit/test_lint_ports.gd`（每个 ports/*.tscn 从 Spawn 用主角胶囊洪泛：
   port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到）。
   里斯本现有八扇门：交易所/酒馆/港务局/造船所（码头一排）、教会/王宫/行会（台地）、银行（槽 8，广场东侧，门朝西——从广场往东走进去）。
