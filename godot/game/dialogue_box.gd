@@ -1,4 +1,4 @@
-## 对话窗（表现层，可复用）：底部信息框 = 头像 + 名字栏 + 逐字显示正文 + 按键推进/关闭。
+## 对话窗（表现层，可复用）：底部信息框 = 头像 + 名字栏 + 逐字显示正文 + 按键或左键点击推进/关闭。
 ## 吃逐字 token（text / newline），每字一格，用系统字体绘制。剧本对话与设施对话共用。
 class_name DialogueBox
 extends CanvasLayer
@@ -67,13 +67,25 @@ func _process(delta: float) -> void:
 		_text.queue_redraw()
 
 
+## 左键点任何地方都推进。走 _input：对话框自己的 Panel 和设施面板的压暗层都是 MOUSE_FILTER_STOP，
+## 点击到不了 _unhandled_input。不吞事件，点在设施菜单项上照样选中那一项。
+func _input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+		_advance()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_cancel"):
-		if not is_fully_revealed():
-			reveal_all()
-		else:
-			closed.emit()
+		_advance()
 		get_viewport().set_input_as_handled()
+
+
+func _advance() -> void:
+	if not is_fully_revealed():
+		reveal_all()
+	else:
+		closed.emit()
 
 
 # --- 渲染 ---

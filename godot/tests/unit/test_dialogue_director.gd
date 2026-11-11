@@ -83,3 +83,24 @@ func test_portrait_beat_shows_placeholder_face() -> void:
 	# 程序员美术：头像号 → 自制占位头像（不用原版 KAO）。
 	var d := _director()
 	assert_not_null(d._box._portrait, "CC 头像节拍应显示占位头像")
+
+
+func test_one_click_advances_exactly_one_line() -> void:
+	var events := {"scenario": 1, "chapters": [{"index": 0, "entries": [], "script": [
+		{"label": "L0"},
+		{"op": "say", "text": "snr1/0"}, {"op": "wait"},
+		{"op": "say", "text": "snr1/1"}, {"op": "wait"},
+		{"op": "end"},
+	]}]}
+	var interp := EventInterpreter.new(EventScript.new(events, WORDS), GameState.new(1, 0), 0)
+	interp.start("L0")
+	var d := DialogueDirector.new()
+	add_child_autofree(d)
+	d.play(interp)
+	d._box.reveal_all()
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = true
+	get_viewport().push_input(ev)
+	assert_eq(d.current_line()["speaker"], "夫人", "点一下 → 下一句")
+	assert_false(d._box.is_fully_revealed(), "同一次点击不会连带推进新的一句")

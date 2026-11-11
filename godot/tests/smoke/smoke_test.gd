@@ -99,7 +99,15 @@ func _intro(port: PortScene3D) -> bool:
 	if first["mode"] != "cutscene" or first["line"]["body"] == "":
 		push_error("新开一局没有演开场：%s" % first)
 		return false
-	var lines := 0
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	get_root().push_input(click)
+	get_root().push_input(click)
+	if agent.observe().get("line", {}) == first["line"]:
+		push_error("鼠标左键点两下（全显 → 下一句）没有推进开场对话")
+		return false
+	var lines := 1
 	while agent.observe()["mode"] == "cutscene" and lines < 30:
 		await agent.act({"do": "next"})
 		lines += 1
