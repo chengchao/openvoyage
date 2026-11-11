@@ -131,3 +131,15 @@ func test_clicking_a_menu_item_selects_it() -> void:
 	var second := FacilityActions.labels(&"bank")[1]
 	_click(s, second)
 	assert_signal_emitted_with_parameters(s, "menu_selected", [1, second])
+
+
+func test_click_closes_greeting_without_leaving() -> void:
+	var s := _scene(1)
+	watch_signals(s)
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = true
+	s._dialogue._input(ev)
+	s._dialogue._input(ev)
+	assert_false(s.has_dialogue(), "点两下（全显 → 关闭）寒暄就收起")
+	assert_signal_not_emitted(s, "exit_requested")

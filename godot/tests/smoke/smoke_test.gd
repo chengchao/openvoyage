@@ -99,7 +99,15 @@ func _intro(port: PortScene3D) -> bool:
 	if first["mode"] != "cutscene" or first["line"]["body"] == "":
 		push_error("新开一局没有演开场：%s" % first)
 		return false
-	var lines := 0
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	get_root().push_input(click)
+	get_root().push_input(click)
+	if agent.observe().get("line", {}) == first["line"]:
+		push_error("鼠标左键点两下（全显 → 下一句）没有推进开场对话")
+		return false
+	var lines := 1
 	while agent.observe()["mode"] == "cutscene" and lines < 30:
 		await agent.act({"do": "next"})
 		lines += 1
@@ -331,10 +339,28 @@ func _story_at_door(port: PortScene3D) -> bool:
 	if body != "阿明，請進！":
 		push_error("剧情台词/变量代入有误：%s" % body)
 		return false
-	port.doors.director.advance()
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	click.position = Vector2(380, 153)
+	get_root().push_input(click)
+	get_root().push_input(click)
 	await process_frame
 	if not port.doors.is_in_facility():
-		push_error("剧情演完未落入常规设施")
+		push_error("点击演完剧情后没有留在设施里（收尾的点击穿透到了刚出现的菜单？）")
+		return false
+	var fs: FacilityScene = port.doors.facility_scene
+	if not fs._menu_items[0].get_global_rect().has_point(click.position):
+		push_error("冒烟的点击位置 %s 已不在设施菜单第一项上，这一步测不到穿透" % click.position)
+		return false
+	if not fs.has_dialogue():
+		push_error("收尾的点击顺带关掉了店主寒暄")
+		return false
+	var greeting := fs.spoken_line()
+	click.position = fs._menu_items[3].get_global_rect().get_center()
+	get_root().push_input(click)
+	if fs.spoken_line() == greeting:
+		push_error("寒暄开着时点菜单项『%s』没有选中它" % fs._menu_items[3].text)
 		return false
 	print("  HD-2D 港口：撞门 → 剧情『%s』 → 演完进设施" % body)
 	port.doors.facility_scene._request_exit()

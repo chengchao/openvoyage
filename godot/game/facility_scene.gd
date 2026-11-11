@@ -91,6 +91,7 @@ func say(line: String) -> void:
 	_line = line
 	_dialogue = DialogueBox.new()
 	_dialogue.layer = 10  # 盖在设施面板之上
+	_dialogue.click_through = true
 	_dialogue.setup(DialogueBox.text_tokens(facility_name()),
 		DialogueBox.text_tokens(line))
 	_dialogue.closed.connect(_on_dialogue_closed)

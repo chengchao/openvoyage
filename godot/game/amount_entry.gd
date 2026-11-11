@@ -1,5 +1,5 @@
 ## 金额输入模态（表现层）：覆盖在设施面板之上，让玩家选定一个 0..max 的金额。
-## 操作：↑/↓ ±小步(默认 100)，→/← ±大步(小步的 10 倍)，确定(ui_accept)发 confirmed(amount)，取消(ui_cancel)发 cancelled。
+## 操作：↑/↓ ±小步(默认 100)，→/← ±大步(小步的 10 倍)，确定(ui_accept)发 confirmed(amount)，取消(ui_cancel)发 cancelled；面板上有同样功能的按钮供鼠标点。
 ## 银行存/取、货物件数、捐献、补给采购等需要选额的设施功能共用此组件。
 class_name AmountEntry
 extends CanvasLayer
@@ -39,11 +39,18 @@ func _ready() -> void:
 	prompt.position = Vector2(10, 8)
 
 	var hint := Label.new()
-	hint.text = "↑↓±%d ←→±%d 确定/取消" % [_step, _step * 10]
+	hint.text = "↑↓±%d　←→±%d　Enter 確定　Esc 取消" % [_step, _step * 10]
 	hint.position = Vector2(10, 66)
 
 	var panel := Panel.new()
-	panel.size = Vector2(maxf(180, maxf(prompt.get_minimum_size().x, hint.get_minimum_size().x) + 20), 92)
+	var buttons := HBoxContainer.new()
+	buttons.position = Vector2(10, 92)
+	for delta: int in [-_step * 10, -_step, _step, _step * 10]:
+		_add_button(buttons, "%+d" % delta, adjust.bind(delta))
+	_add_button(buttons, "確定", confirm)
+	_add_button(buttons, "取消", cancel)
+	var width := maxf(prompt.get_minimum_size().x, maxf(hint.get_minimum_size().x, buttons.get_minimum_size().x))
+	panel.size = Vector2(maxf(180, width + 20), 100 + buttons.get_minimum_size().y)
 	panel.position = ((get_viewport().get_visible_rect().size - panel.size) * 0.5).floor()
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.07, 0.1, 0.2, 0.95)  # 不透明底：否则下层设施菜单的字会透上来
@@ -58,8 +65,17 @@ func _ready() -> void:
 	panel.add_child(_value_label)
 
 	panel.add_child(hint)
+	panel.add_child(buttons)
 
 	_refresh()
+
+
+func _add_button(row: HBoxContainer, text: String, on_pressed: Callable) -> void:
+	var b := Button.new()
+	b.text = text
+	b.focus_mode = Control.FOCUS_NONE  # 点过的按钮若留着焦点，Enter 会变成再按它一次而不是确定
+	b.pressed.connect(on_pressed)
+	row.add_child(b)
 
 
 func amount() -> int:
