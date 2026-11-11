@@ -124,7 +124,7 @@ func _yard(floor_top := 0.0, fenced := true) -> Node3D:
 
 
 func _rules(root: Node3D) -> Array:
-	await wait_frames(3)
+	await wait_physics_frames(3)
 	return walk(root.get_world_3d().direct_space_state, Vector3.ZERO).problems.map(func(p): return p.rule)
 
 
@@ -151,7 +151,7 @@ func test_walking_into_a_solid_csg_wall_is_blocked_not_a_void() -> void:
 	wall.size = Vector3(2, 3, 8)
 	wall.position = Vector3(3, 1.5, 0)
 	root.add_child(wall)
-	await wait_frames(3)
+	await wait_physics_frames(3)
 	var problems: Array = walk(root.get_world_3d().direct_space_state, Vector3.ZERO).problems
 	assert_gt(problems.size(), 0, "另外三条边没墙，照报")
 	assert_eq(problems.filter(func(p): return p.at.x > 1.9), [], "贴着实心 CSG 墙的那一边不该报坑")
@@ -159,7 +159,7 @@ func test_walking_into_a_solid_csg_wall_is_blocked_not_a_void() -> void:
 
 func test_target_outside_the_fence_is_unreachable() -> void:
 	var root := _yard()
-	await wait_frames(3)
+	await wait_physics_frames(3)
 	var reached: Dictionary = walk(root.get_world_3d().direct_space_state, Vector3.ZERO).reached
 	var area := Area3D.new()
 	var shape := CollisionShape3D.new()
@@ -179,7 +179,7 @@ func test_every_port_scene_is_lint_clean() -> void:
 			continue
 		var port: PortScene3D = load(PORTS_DIR + f).instantiate()
 		add_child(port)
-		await wait_frames(3)
+		await wait_physics_frames(3)
 		found.append_array(violations(port, PORTS_DIR + f))
 		port.free()  # 各港共用一个物理空间：留着上一座，下一座会踩到它的地面上
 	assert_eq(found.size(), 0, "\n".join(found))
