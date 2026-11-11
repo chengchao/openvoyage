@@ -9,6 +9,9 @@ const CELL := 16
 const REVEAL_PER_SEC := 30.0
 const BOX_H := 88
 
+## 盖在菜单上却不挡菜单的对话（设施里的店主寒暄）设 true：点菜单项既收起对话又选中那一项。
+var click_through := false
+
 var _speaker: Array = []
 var _body: Array = []
 var _portrait: Texture2D
@@ -68,11 +71,13 @@ func _process(delta: float) -> void:
 
 
 ## 左键点任何地方都推进。走 _input：对话框自己的 Panel 和设施面板的压暗层都是 MOUSE_FILTER_STOP，
-## 点击到不了 _unhandled_input。不吞事件，点在设施菜单项上照样选中那一项。
+## 点击到不了 _unhandled_input。点击默认吞掉：剧情最后一下点击曾穿透到刚建出来的设施菜单上。
 func _input(event: InputEvent) -> void:
 	var mb := event as InputEventMouseButton
 	if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
 		_advance()
+		if not click_through:
+			get_viewport().set_input_as_handled()
 
 
 func _unhandled_input(event: InputEvent) -> void:
