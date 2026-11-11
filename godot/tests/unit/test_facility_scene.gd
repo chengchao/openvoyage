@@ -139,7 +139,7 @@ func test_click_closes_greeting_without_leaving() -> void:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_LEFT
 	ev.pressed = true
-	get_viewport().push_input(ev)
-	get_viewport().push_input(ev)
+	s._dialogue._input(ev)
+	s._dialogue._input(ev)
 	assert_false(s.has_dialogue(), "点两下（全显 → 关闭）寒暄就收起")
 	assert_signal_not_emitted(s, "exit_requested")

@@ -1,6 +1,6 @@
 ## 代码 lint：扫描游戏代码，禁止已经咬过人的写法。每条规则写明为什么；确有必要时在该行加
 ## `# lint-allow: <规则 id>` 并在同行说明理由。
-## 规则带 requires 时：regex 第 1 组捕获变量名，同文件里必须出现 requires % 变量名，否则违规。
+## 规则带 requires 时：同文件里必须出现其中任意一项，否则违规；项里的 %s 换成 regex 第 1 组捕获的变量名。
 extends GutTest
 
 const SCAN_DIRS := ["res://game", "res://sim", "res://data"]
@@ -14,16 +14,23 @@ const RULES := [
 	{
 		"id": "full-rect-mouse-filter",
 		"regex": "(\\w+)\\.set_anchors_and_offsets_preset\\(Control\\.PRESET_FULL_RECT\\)",
-		"requires": "%s.mouse_filter",
+		"requires": ["%s.mouse_filter"],
 		"why": "全屏 Control 默认 MOUSE_FILTER_STOP，会吞掉下层所有点击（对话框压暗层曾让设施菜单点不动）。"
 			+ "显式写 mouse_filter：只压暗用 IGNORE，模态挡点击用 STOP。",
 	},
 	{
 		"id": "gui-input-mouse-filter",
 		"regex": "(\\w+)\\.gui_input\\.connect",
-		"requires": "%s.mouse_filter",
+		"requires": ["%s.mouse_filter"],
 		"why": "Label/TextureRect 等默认 MOUSE_FILTER_IGNORE，接了 gui_input 也永远收不到点击（设施菜单「離開」曾点不动）。"
 			+ "同文件里给它设 mouse_filter = MOUSE_FILTER_STOP。",
+	},
+	{
+		"id": "accept-needs-mouse",
+		"regex": "is_action_pressed\\(\"ui_accept\"\\)",
+		"requires": ["InputEventMouseButton", ".pressed.connect"],
+		"why": "键盘能确定的界面鼠标也得能操作（对话框曾只认 Space，点击没反应；金额输入曾只能用键盘）。"
+			+ "同文件里处理左键点击，或放 Button。",
 	},
 ]
 
@@ -47,7 +54,8 @@ static func violations(source: String, path: String) -> PackedStringArray:
 			var m := re.search(lines[i])
 			if m == null or lines[i].contains("lint-allow: " + rule["id"]):
 				continue
-			if rule.has("requires") and source.contains(rule["requires"] % m.get_string(1)):
+			if rule.get("requires", []).any(func(need: String) -> bool:
+					return source.contains(need.replace("%s", m.get_string(1)))):
 				continue
 			out.append("%s:%d [%s] %s" % [path, i + 1, rule["id"], rule["why"]])
 	return out
@@ -77,6 +85,12 @@ func test_gui_input_handler_must_set_mouse_filter() -> void:
 	var ok := "	item.mouse_filter = Control.MOUSE_FILTER_STOP\n" + bad
 	assert_eq(violations(ok, "x.gd").size(), 0)
 
+
+func test_keyboard_confirm_must_also_take_the_mouse() -> void:
+	var bad := "	if event.is_action_pressed(\"ui_accept\"):\n		confirm()"
+	assert_eq(violations(bad, "x.gd").size(), 1, "只认键盘确定，鼠标点不动")
+	assert_eq(violations(bad + "\n	var mb := event as InputEventMouseButton", "x.gd").size(), 0)
+	assert_eq(violations(bad + "\n	ok.pressed.connect(confirm)", "x.gd").size(), 0)
 
 func test_game_code_has_no_lint_violations() -> void:
 	var found := PackedStringArray()

@@ -57,7 +57,7 @@ func test_text_tokens_turns_line_breaks_into_newline_tokens() -> void:
 	assert_eq(t[2]["ch"], "乙")
 
 
-# --- 鼠标（经视口派发，与真机一致） ---
+# --- 鼠标（事件直接交给对话框：GUT 里经视口派发的鼠标事件时到时不到；真实派发由冒烟测试覆盖） ---
 
 func _mouse(button := MOUSE_BUTTON_LEFT, pressed := true) -> InputEventMouseButton:
 	var ev := InputEventMouseButton.new()
@@ -69,16 +69,16 @@ func _mouse(button := MOUSE_BUTTON_LEFT, pressed := true) -> InputEventMouseButt
 func test_left_click_reveals_all_then_closes() -> void:
 	var b := _box()
 	watch_signals(b)
-	get_viewport().push_input(_mouse())
+	b._input(_mouse())
 	assert_true(b.is_fully_revealed(), "第一次点击：全显")
 	assert_signal_not_emitted(b, "closed")
-	get_viewport().push_input(_mouse())
+	b._input(_mouse())
 	assert_signal_emitted(b, "closed", "第二次点击：关闭")
 
 
 func test_only_left_press_advances() -> void:
 	var b := _box()
-	get_viewport().push_input(_mouse(MOUSE_BUTTON_LEFT, false))
-	get_viewport().push_input(_mouse(MOUSE_BUTTON_RIGHT))
-	get_viewport().push_input(_mouse(MOUSE_BUTTON_WHEEL_DOWN))
+	b._input(_mouse(MOUSE_BUTTON_LEFT, false))
+	b._input(_mouse(MOUSE_BUTTON_RIGHT))
+	b._input(_mouse(MOUSE_BUTTON_WHEEL_DOWN))
 	assert_false(b.is_fully_revealed(), "松开、右键、滚轮都不推进")

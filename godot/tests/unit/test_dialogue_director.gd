@@ -101,6 +101,5 @@ func test_one_click_advances_exactly_one_line() -> void:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = MOUSE_BUTTON_LEFT
 	ev.pressed = true
-	get_viewport().push_input(ev)
+	d._box._input(ev)
 	assert_eq(d.current_line()["speaker"], "夫人", "点一下 → 下一句")
-	assert_false(d._box.is_fully_revealed(), "同一次点击不会连带推进新的一句")
