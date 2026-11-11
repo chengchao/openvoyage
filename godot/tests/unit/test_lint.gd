@@ -1,7 +1,8 @@
 ## 代码 lint：扫描游戏代码，禁止已经咬过人的写法。每条规则写明为什么；确有必要时在该行加
 ## `# lint-allow: <规则 id>` 并在同行说明理由。
 ## 规则带 requires 时：同文件里必须出现其中任意一项，否则违规；项里的 %s 换成 regex 第 1 组捕获的变量名。
-## 规则带 scope 时：只查函数头匹配 scope 的函数体。规则带 then 时：下一行也匹配 then 才算违规。
+## 规则带 scope = "function" 时：只在命中行所在的函数体里找 requires。
+## 规则带 within 时：只查函数头匹配 within 的函数体。规则带 then 时：下一行也匹配 then 才算违规。
 extends GutTest
 
 const SCAN_DIRS := ["res://game", "res://sim", "res://data"]
@@ -27,6 +28,14 @@ const RULES := [
 			+ "同文件里给它设 mouse_filter = MOUSE_FILTER_STOP。",
 	},
 	{
+		"id": "input-must-consume",
+		"regex": "^func _input\\(",
+		"scope": "function",
+		"requires": ["set_input_as_handled"],
+		"why": "_input 先于 GUI：处理了事件却不吞，它会继续落到下层，甚至落到这次处理中刚建出来的界面上"
+			+ "（剧情最后一下点击曾穿透到新出现的设施菜单，把玩家送出设施）。吞掉；确实要放行就在同一函数里按条件吞，并写明理由。",
+	},
+	{
 		"id": "accept-needs-mouse",
 		"regex": "is_action_pressed\\(\"ui_accept\"\\)",
 		"requires": ["InputEventMouseButton", ".pressed.connect"],
@@ -35,7 +44,7 @@ const RULES := [
 	},
 	{
 		"id": "input-state-gate",
-		"scope": "^func (_input|_unhandled_input|_unhandled_key_input|_shortcut_input)\\(",
+		"within": "^func (_input|_unhandled_input|_unhandled_key_input|_shortcut_input)\\(",
 		"regex": "^\tif (?!.*\\bevent\\b).*:",
 		"then": "^\t\treturn\\b",
 		"why": "输入处理函数开头按状态整段早退，界面还摆在眼前却不认键（设施菜单曾在寒暄对话框开着时丢掉方向键）。"
@@ -55,24 +64,32 @@ func _gd_files(dir: String) -> PackedStringArray:
 	return out
 
 
+static func _function_at(lines: PackedStringArray, start: int) -> String:
+	var end := start + 1
+	while end < lines.size() and not (lines[end].begins_with("func ") or lines[end].begins_with("static func ")):
+		end += 1
+	return "\n".join(lines.slice(start, end))
+
+
 static func violations(source: String, path: String) -> PackedStringArray:
 	var out := PackedStringArray()
 	var lines := source.split("\n")
 	for rule in RULES:
 		var re := RegEx.create_from_string(rule["regex"])
-		var scope := RegEx.create_from_string(rule.get("scope", ""))
+		var within := RegEx.create_from_string(rule.get("within", ""))
 		var then := RegEx.create_from_string(rule.get("then", ""))
-		var in_scope: bool = not rule.has("scope")
+		var in_scope: bool = not rule.has("within")
 		for i in lines.size():
-			if rule.has("scope") and lines[i].begins_with("func "):
-				in_scope = scope.search(lines[i]) != null
+			if rule.has("within") and lines[i].begins_with("func "):
+				in_scope = within.search(lines[i]) != null
 			var m := re.search(lines[i])
 			if m == null or not in_scope or lines[i].contains("lint-allow: " + rule["id"]):
 				continue
 			if rule.has("then") and (i + 1 >= lines.size() or then.search(lines[i + 1]) == null):
 				continue
+			var haystack := _function_at(lines, i) if rule.get("scope", "") == "function" else source
 			if rule.get("requires", []).any(func(need: String) -> bool:
-					return source.contains(need.replace("%s", m.get_string(1)))):
+					return haystack.contains(need.replace("%s", m.get_string(1)))):
 				continue
 			out.append("%s:%d [%s] %s" % [path, i + 1, rule["id"], rule["why"]])
 	return out
@@ -111,13 +128,21 @@ func test_keyboard_confirm_must_also_take_the_mouse() -> void:
 
 
 func test_input_handler_must_not_drop_keys_behind_a_state_gate() -> void:
-	var gate := "	if _dialogue != null:\n		return\n	if event.is_action_pressed(\"ui_up\"):\n		move(-1)"
+	var gate := "	if _dialogue != null:\n		return\n	if event.is_action_pressed(\"ui_up\"):\n		get_viewport().set_input_as_handled()"
 	var bad := "func _unhandled_input(event: InputEvent) -> void:\n" + gate
 	assert_eq(violations(bad, "x.gd").size(), 1, "对话框开着时方向键被整个丢掉")
 	assert_eq(violations("func _input(event: InputEvent) -> void:\n" + gate, "x.gd").size(), 1)
 	assert_eq(violations("func refresh() -> void:\n" + gate, "x.gd").size(), 0, "只管输入处理函数")
 	var by_event := "func _unhandled_input(event: InputEvent) -> void:\n	if not event.is_pressed():\n		return"
 	assert_eq(violations(by_event, "x.gd").size(), 0, "按事件本身筛选不算门控")
+
+
+func test_input_handler_must_decide_whether_to_consume() -> void:
+	var bad := "func _input(event: InputEvent) -> void:\n	_advance()\n\n\nfunc _unhandled_input(event: InputEvent) -> void:\n	get_viewport().set_input_as_handled()"
+	assert_eq(violations(bad, "x.gd").size(), 1, "别的函数里吞了不算，_input 自己得决定")
+	var ok := "func _input(event: InputEvent) -> void:\n	_advance()\n	get_viewport().set_input_as_handled()"
+	assert_eq(violations(ok, "x.gd").size(), 0)
+
 
 func test_game_code_has_no_lint_violations() -> void:
 	var found := PackedStringArray()
