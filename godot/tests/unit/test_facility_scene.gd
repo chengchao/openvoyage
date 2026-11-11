@@ -143,3 +143,45 @@ func test_click_closes_greeting_without_leaving() -> void:
 	s._dialogue._input(ev)
 	assert_false(s.has_dialogue(), "点两下（全显 → 关闭）寒暄就收起")
 	assert_signal_not_emitted(s, "exit_requested")
+
+
+func _press(action: String) -> InputEventAction:
+	var ev := InputEventAction.new()
+	ev.action = action
+	ev.pressed = true
+	return ev
+
+
+func test_arrow_keys_move_the_cursor_while_greeting_is_open() -> void:
+	var s := _fmenu_scene()
+	assert_true(s.has_dialogue(), "前提：寒暄对话框开着")
+	get_viewport().push_input(_press("ui_down"))
+	assert_eq(s.selected_index(), 1, "进门后第一下 ↓ 就移动光标")
+	get_viewport().push_input(_press("ui_up"))
+	assert_eq(s.selected_index(), 0)
+
+
+func test_accept_selects_while_greeting_is_open() -> void:
+	var s := _fmenu_scene()
+	watch_signals(s)
+	get_viewport().push_input(_press("ui_accept"))
+	assert_signal_emitted_with_parameters(s, "menu_selected", [0, FacilityActions.labels(&"bank")[0]])
+
+
+func test_accept_on_a_reply_dismisses_it_instead_of_selecting_again() -> void:
+	var s := _fmenu_scene()
+	s._on_dialogue_closed()
+	s.say("成交。")
+	watch_signals(s)
+	get_viewport().push_input(_press("ui_accept"))
+	get_viewport().push_input(_press("ui_accept"))
+	assert_false(s.has_dialogue(), "确定键两下（全显 → 关闭）收起回话")
+	assert_signal_not_emitted(s, "menu_selected")
+
+
+func test_arrow_keys_move_the_cursor_while_a_reply_is_open() -> void:
+	var s := _fmenu_scene()
+	s._on_dialogue_closed()
+	s.say("成交。")
+	get_viewport().push_input(_press("ui_down"))
+	assert_eq(s.selected_index(), 1)

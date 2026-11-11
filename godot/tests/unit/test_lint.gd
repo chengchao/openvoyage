@@ -2,6 +2,7 @@
 ## `# lint-allow: <规则 id>` 并在同行说明理由。
 ## 规则带 requires 时：同文件里必须出现其中任意一项，否则违规；项里的 %s 换成 regex 第 1 组捕获的变量名。
 ## 规则带 scope = "function" 时：只在命中行所在的函数体里找 requires。
+## 规则带 within 时：只查函数头匹配 within 的函数体。规则带 then 时：下一行也匹配 then 才算违规。
 extends GutTest
 
 const SCAN_DIRS := ["res://game", "res://sim", "res://data"]
@@ -41,6 +42,15 @@ const RULES := [
 		"why": "键盘能确定的界面鼠标也得能操作（对话框曾只认 Space，点击没反应；金额输入曾只能用键盘）。"
 			+ "同文件里处理左键点击，或放 Button。",
 	},
+	{
+		"id": "input-state-gate",
+		"within": "^func (_input|_unhandled_input|_unhandled_key_input|_shortcut_input)\\(",
+		"regex": "^\tif (?!.*\\bevent\\b).*:",
+		"then": "^\t\treturn\\b",
+		"why": "输入处理函数开头按状态整段早退，界面还摆在眼前却不认键（设施菜单曾在寒暄对话框开着时丢掉方向键）。"
+			+ "要让出键盘就让上层模态自己吃掉它要的键（set_input_as_handled），"
+			+ "或由拥有者 set_process_unhandled_input(false)；其余的键照常处理。",
+	},
 ]
 
 
@@ -66,9 +76,16 @@ static func violations(source: String, path: String) -> PackedStringArray:
 	var lines := source.split("\n")
 	for rule in RULES:
 		var re := RegEx.create_from_string(rule["regex"])
+		var within := RegEx.create_from_string(rule.get("within", ""))
+		var then := RegEx.create_from_string(rule.get("then", ""))
+		var in_scope: bool = not rule.has("within")
 		for i in lines.size():
+			if rule.has("within") and lines[i].begins_with("func "):
+				in_scope = within.search(lines[i]) != null
 			var m := re.search(lines[i])
-			if m == null or lines[i].contains("lint-allow: " + rule["id"]):
+			if m == null or not in_scope or lines[i].contains("lint-allow: " + rule["id"]):
+				continue
+			if rule.has("then") and (i + 1 >= lines.size() or then.search(lines[i + 1]) == null):
 				continue
 			var haystack := _function_at(lines, i) if rule.get("scope", "") == "function" else source
 			if rule.get("requires", []).any(func(need: String) -> bool:
@@ -108,6 +125,17 @@ func test_keyboard_confirm_must_also_take_the_mouse() -> void:
 	assert_eq(violations(bad, "x.gd").size(), 1, "只认键盘确定，鼠标点不动")
 	assert_eq(violations(bad + "\n	var mb := event as InputEventMouseButton", "x.gd").size(), 0)
 	assert_eq(violations(bad + "\n	ok.pressed.connect(confirm)", "x.gd").size(), 0)
+
+
+func test_input_handler_must_not_drop_keys_behind_a_state_gate() -> void:
+	var gate := "	if _dialogue != null:\n		return\n	if event.is_action_pressed(\"ui_up\"):\n		get_viewport().set_input_as_handled()"
+	var bad := "func _unhandled_input(event: InputEvent) -> void:\n" + gate
+	assert_eq(violations(bad, "x.gd").size(), 1, "对话框开着时方向键被整个丢掉")
+	assert_eq(violations("func _input(event: InputEvent) -> void:\n" + gate, "x.gd").size(), 1)
+	assert_eq(violations("func refresh() -> void:\n" + gate, "x.gd").size(), 0, "只管输入处理函数")
+	var by_event := "func _unhandled_input(event: InputEvent) -> void:\n	if not event.is_pressed():\n		return"
+	assert_eq(violations(by_event, "x.gd").size(), 0, "按事件本身筛选不算门控")
+
 
 func test_input_handler_must_decide_whether_to_consume() -> void:
 	var bad := "func _input(event: InputEvent) -> void:\n	_advance()\n\n\nfunc _unhandled_input(event: InputEvent) -> void:\n	get_viewport().set_input_as_handled()"

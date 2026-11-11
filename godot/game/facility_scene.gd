@@ -82,11 +82,12 @@ func _ready() -> void:
 	panel.add_child(hint)
 
 	if _type != null:
-		say(FacilityActions.greeting(_type.key))  # 进门：店主寒暄一句，按键关闭后露出菜单
+		say(FacilityActions.greeting(_type.key))
+		_dialogue.set_process_unhandled_input(false)  # 寒暄不占键盘：第一下确定键就选菜单项
 
 
 ## 让店主说一句（说话人=设施名，头像在面板已显示故不重复）。设施功能用它反馈结果。
-## 对话存在期间菜单输入被门控（_unhandled_input 早退）；关闭后回到菜单。
+## 回话开着时确定键归对话框（收起回话，免得连按把同一项再选一次）；方向键收起它并移动光标。
 func say(line: String) -> void:
 	_line = line
 	_dialogue = DialogueBox.new()
@@ -131,13 +132,14 @@ func _on_item_input(event: InputEvent, index: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _dialogue != null:
-		return  # 对话框自行处理输入（推进/关闭）
 	if event.is_action_pressed("ui_up"):
+		_on_dialogue_closed()
 		move_selection(-1)
 	elif event.is_action_pressed("ui_down"):
+		_on_dialogue_closed()
 		move_selection(1)
 	elif event.is_action_pressed("ui_accept"):
+		_on_dialogue_closed()
 		activate_selected()
 	else:
 		return
