@@ -39,6 +39,7 @@ var pick_prompt := ""                # PICK 时有效
 var pick_options: Array = []         # PICK 时有效，每行都有 label；货物行 {key, name, price, cap}，航线行 {to, name, days}
 var pending_good: Dictionary = {}    # 买卖的 AMOUNT_ENTRY 时有效：选中的那一行
 var _menu_notes := {}                # GAME_MENU 时有效：选单 action → 这次开选单以来的存/读档结果
+var _armed := &""                    # GAME_MENU 时有效：按过一下、等第二下确认的选单 action
 
 
 ## 不给 world 就自带一局新的（不碰 World.current）。
@@ -188,8 +189,23 @@ func close_menu() -> bool:
 	if mode != Mode.GAME_MENU:
 		return false
 	_menu_notes.clear()
+	_armed = &""
 	mode = Mode.WALKING
 	return true
+
+
+## 会丢掉没存进度的选单项（讀取進度/回到標題/結束遊戲）：同一项连按两下才算数，第一下只在详情栏提示。
+func confirm(action: StringName) -> bool:
+	if mode != Mode.GAME_MENU:
+		return false
+	var ok := _armed == action
+	_armed = &"" if ok else action
+	return ok
+
+
+## 光标移开：作废等确认的那一下。
+func disarm() -> void:
+	_armed = &""
 
 
 ## 把 world 写进 save_path，结果显示在「儲存進度」的详情栏。只在选单里有效。
@@ -232,6 +248,8 @@ func menu_detail(cat_index: int, item_index: int) -> String:
 			text += "\n" + NOT_OPEN_YET
 	if _menu_notes.has(action):
 		text += "\n" + _menu_notes[action]
+	if _armed != &"" and _armed == action:
+		text += "\n再按一次確定。"
 	return text
 
 

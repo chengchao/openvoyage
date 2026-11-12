@@ -1,20 +1,19 @@
-## 薄加载层：读资产清单并按需解码 PNG。
-##
-## 用 Image.load 直接从磁盘解码 PNG（不依赖 Godot 的导入产物 .ctex），
-## 因此不需要先跑 --import。
+## 占位资产包（资料检视器用）：读清单，按条目取图。
 class_name AssetPack
 extends RefCounted
 
-var manifest_path: String = ""
 var base_dir: String = ""
 var data: Dictionary = {}
 
 
+## 清单缺失或格式错误时 data 为空（没有条目）。
 static func load_pack(path := "res://data/placeholder/manifest.json") -> AssetPack:
 	var pack := AssetPack.new()
-	pack.manifest_path = path
 	pack.base_dir = path.get_base_dir()
-	pack.data = GameConfig.load_manifest(path)
+	if FileAccess.file_exists(path):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if typeof(parsed) == TYPE_DICTIONARY:
+			pack.data = parsed
 	return pack
 
 
@@ -27,18 +26,7 @@ func items() -> Array:
 	return data.get("images", [])
 
 
-## 解码某条目为 Image；失败返回 null。
+## 取某条目的图片；失败返回 null。
 func load_image(entry: Dictionary) -> Image:
-	var path := base_dir.path_join(str(entry.get("file", "")))
-	if path.begins_with("res://"):
-		var resource := ResourceLoader.load(path)
-		if resource is Texture2D:
-			return (resource as Texture2D).get_image()
-		if resource is Image:
-			return resource as Image
-		return null
-
-	var img := Image.new()
-	if img.load(path) != OK:
-		return null
-	return img
+	var texture := load(base_dir.path_join(str(entry.get("file", "")))) as Texture2D
+	return texture.get_image() if texture != null else null

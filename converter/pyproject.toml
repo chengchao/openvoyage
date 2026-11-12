@@ -3,7 +3,7 @@ name = "koukai2-converter"
 version = "0.1.0"
 description = "OpenVoyage offline converter: the player's own original data files -> Godot-friendly assets"
 requires-python = ">=3.10"
-dependencies = ["capstone>=5"]
+dependencies = []
 
 [dependency-groups]
 dev = ["pytest>=8", "jsonschema>=4"]

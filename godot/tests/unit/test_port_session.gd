@@ -583,3 +583,24 @@ func test_menu_detail_for_status_shows_the_goal_and_progress() -> void:
 	assert_string_contains(detail, str(World.STARTING_GOLD))
 	s.world.player.gold = 10000
 	assert_string_contains(s.menu_detail(0, 3), "已達成")
+
+
+func test_load_title_and_quit_need_a_second_press() -> void:
+	var s := _in_menu()
+	for action: StringName in [&"load", &"title", &"quit"]:
+		assert_false(s.confirm(action), "%s：第一下只提示" % action)
+		assert_true(s.confirm(action), "%s：第二下才算数" % action)
+	assert_false(s.confirm(&"load"))
+	assert_string_contains(s.menu_detail(SYSTEM, LOAD), "再按一次確定")
+	assert_false(s.menu_detail(SYSTEM, SAVE).contains("再按一次"), "提示只挂在等确认的那一项")
+
+
+func test_moving_away_or_closing_cancels_a_pending_confirm() -> void:
+	var s := _in_menu()
+	s.confirm(&"quit")
+	s.disarm()
+	assert_false(s.confirm(&"quit"), "移过光标：重新提示")
+	assert_false(s.confirm(&"title"), "换了一项：重新提示")
+	s.close_menu()
+	s.open_menu()
+	assert_false(s.confirm(&"title"), "重开选单：重新提示")

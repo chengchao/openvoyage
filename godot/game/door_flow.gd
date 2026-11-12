@@ -128,6 +128,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _on_menu_action(action: StringName) -> void:
+	if action in [&"title", &"quit", &"load"] and not session.confirm(action):
+		return
 	match action:
 		&"title":
 			get_tree().change_scene_to_file(TITLE_SCENE)
