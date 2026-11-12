@@ -29,7 +29,7 @@ func _script() -> EventScript:
 func test_chapter_script_and_count() -> void:
 	var s := _script()
 	assert_eq(s.scenario, 1)
-	assert_eq(s.chapter_count(), 1)
+	assert_eq(s.chapters.size(), 1)
 	assert_eq(s.chapter_script(0).size(), 3)
 	assert_eq(s.chapter_script(9).size(), 0, "越界章节→空")
 

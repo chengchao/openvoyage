@@ -251,13 +251,19 @@ func test_agent_cancels_a_destination_pick_opened_at_the_departure_zone() -> voi
 	await wait_seconds(0.2)
 	agent.port.player.global_position = agent.port.get_node("Departure").global_position
 	await wait_seconds(0.2)
+	assert_eq(agent.observe()["mode"], "walking", "光站在出航区不问，要朝海推")
+	await agent.act({"do": "walk", "dir": "down", "seconds": 0.1})  # 里斯本的海在南（屏幕下方）
 	var obs := agent.observe()
-	assert_eq(obs["mode"], "pick", "走进出航区就问去哪")
+	assert_eq(obs["mode"], "pick", "朝海推就问去哪")
 	assert_false(obs.has("facility"))
 	assert_true(await agent.act({"do": "cancel"}))
 	assert_eq(agent.observe()["mode"], "walking")
+	await agent.act({"do": "walk", "dir": "down", "seconds": 0.1})
+	assert_eq(agent.observe()["mode"], "pick", "取消后还站在出航区，再朝海推仍会问")
+	assert_true(await agent.act({"do": "cancel"}))
 	assert_eq(_entered, [])
 	assert_true(await agent.act({"do": "walk", "dir": "up", "seconds": 0.2}), "取消后照常走路")
+	assert_eq(agent.observe()["mode"], "walking", "朝陆地走不会再问")
 
 
 func test_current_finds_the_port_the_tree_is_showing() -> void:

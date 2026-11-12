@@ -12,6 +12,7 @@ const RULES := {
 	"port-void": "走得到的地方脚下没有地面，主角会无限下坠（里斯本台阶两侧曾是空的）。补地面或加隐形墙。",
 	"port-ledge": "走得到的边缘下方落差超过一级台阶，主角会掉下去（里斯本台地前缘曾无遮挡）。边缘加隐形墙（Bounds）。",
 	"port-unreachable": "从 Spawn 走不到这扇门/出航区，多半是隐形墙把路堵了。",
+	"port-departure-facing": "出航区 -Z 前方 3 米有地面、或身后 3 米没地面：Departure 没朝海，朝海推不会问去哪。把 Departure 绕 Y 转到 -Z 指向水面。",
 }
 
 
@@ -94,6 +95,12 @@ static func violations(port: PortScene3D, path: String) -> PackedStringArray:
 	for t: Area3D in targets:
 		if not reaches(result.reached, t):
 			by_rule.get_or_add("port-unreachable", []).append(t.global_position)
+	var departure := port.get_node("Departure") as Area3D
+	var ground := func(along: float) -> bool:
+		var p := departure.global_position - departure.global_basis.z * along
+		return _floor(space, Vector2i(roundi(p.x / CELL), roundi(p.z / CELL)), 10.0, [port.player.get_rid()]) != null
+	if ground.call(3.0) or not ground.call(-3.0):
+		by_rule.get_or_add("port-departure-facing", []).append(departure.global_position)
 	var out := PackedStringArray()
 	for rule: String in by_rule:
 		var at: Array = by_rule[rule]

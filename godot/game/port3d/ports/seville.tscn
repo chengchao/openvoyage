@@ -145,7 +145,7 @@ fov = 30.0
 position = Vector3(3, 0.1, -6)
 
 [node name="Departure" type="Area3D" parent="."]
-position = Vector3(19, 1, -8)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 19, 1, -8)
 
 [node name="Shape" type="CollisionShape3D" parent="Departure"]
 shape = SubResource("departure_shape")

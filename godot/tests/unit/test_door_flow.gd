@@ -83,7 +83,7 @@ func test_bank_deposit_moves_gold_to_bank() -> void:
 	var f := _inside(BANK)
 	f.facility_scene.menu_selected.emit(0, "存款")
 	assert_not_null(f.amount_entry, "存款应弹金额输入")
-	f.amount_entry.adjust(AmountEntry.STEP_BIG)
+	f.amount_entry.adjust(AmountEntry.STEP_SMALL * 10)
 	f.amount_entry.confirm()
 	assert_eq(f.player_state.gold, World.STARTING_GOLD - 1000)
 	assert_eq(f.player_state.bank, 1000)
@@ -104,7 +104,7 @@ func test_bank_withdraw_moves_bank_to_gold() -> void:
 func test_bank_cancel_leaves_funds_unchanged() -> void:
 	var f := _inside(BANK)
 	f.facility_scene.menu_selected.emit(0, "存款")
-	f.amount_entry.adjust(AmountEntry.STEP_BIG)
+	f.amount_entry.adjust(AmountEntry.STEP_SMALL * 10)
 	f.amount_entry.cancel()
 	assert_eq(f.player_state.gold, World.STARTING_GOLD, "取消不动钱")
 	assert_null(f.amount_entry)

@@ -1,5 +1,5 @@
 ## HD-2D 港口场景根。港口本身在编辑器里手工摆（ports/*.tscn），本脚本只做契约：
-## Spawn 放主角、朝 PortDoor 走进去时走进门流程（DoorFlow）、走进 Departure 问去哪座港、镜头以固定斜角跟随。
+## Spawn 放主角、朝 PortDoor 走进去时走进门流程（DoorFlow）、在 Departure 里朝海推时问去哪座港、镜头以固定斜角跟随。
 class_name PortScene3D
 extends Node3D
 
@@ -11,7 +11,7 @@ signal door_entered(slot: int)
 @export var camera_offset := Vector3(0, 12, 24)
 @export var camera_x_limits := Vector2(-14, 14)
 
-## 站在门的触发区里、且方向键朝门里（门节点 -Z）推到这个程度才进门；横着擦过不算。
+## 站在门的触发区里、且方向键朝门里（门节点 -Z）推到这个程度才进门；横着擦过不算。出航区同理（Departure 的 -Z 朝海）。
 const DOOR_PUSH := 0.7
 
 var player: Avatar3D
@@ -19,6 +19,7 @@ var _doors: Array[PortDoor] = []
 var doors := DoorFlow.new()
 
 @onready var _camera: Camera3D = $Camera3D
+@onready var _departure: Area3D = $Departure
 
 
 ## 让 world 成为当前世界，并切到它所在港的场景。
@@ -38,9 +39,6 @@ func _ready() -> void:
 	doors.port_id = port_id
 	add_child(doors)
 	_doors.assign(find_children("*", "PortDoor", true, false))
-	($Departure as Area3D).body_entered.connect(func(body: Node3D) -> void:
-		if body == player:
-			doors.open_departure())
 	var notice := World.current.take_notice()
 	if notice != "":
 		doors.announce(notice)
@@ -60,6 +58,8 @@ func _physics_process(_delta: float) -> void:
 			door_entered.emit(door.slot)
 			doors.open(door.slot)
 			return
+	if _departure.overlaps_body(player) and push.dot(-_departure.global_basis.z) >= DOOR_PUSH:
+		doors.open_departure()
 
 
 func _process(delta: float) -> void:

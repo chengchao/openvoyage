@@ -104,7 +104,7 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   代码 lint 写在 `tests/unit/test_lint.gd`（随 GUT 跑；规则表：process-mode-disabled / full-rect-mouse-filter /
   gui-input-mouse-filter / accept-needs-mouse / input-must-consume / input-state-gate，违规须修或同行 `# lint-allow: <id>` 写明理由）。
   关卡几何 lint 写在 `tests/unit/test_lint_ports.gd`（每个 ports/*.tscn 从 Spawn 用主角胶囊洪泛：
-  port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到）。
+  port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到 / port-departure-facing 出航区 -Z 没朝海）。
   里斯本现有八扇门：交易所/酒馆/港务局/造船所（码头一排）、教会/王宫/行会（台地）、银行（槽 8，广场东侧，门朝西——从广场往东走进去）。
   塞維利亞（港 1，河港：广场北排交易所/酒馆/港务局、西侧银行门朝东、东岸栈桥出航）是第二座港。
   待办：港内 NPC（旧 2D 的 NpcCrowd 已随网格港删除，需按 3D 重做）；主角像素走路动画。
@@ -130,7 +130,7 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   游戏内选单「貨物一覽」已实装（action `cargo`）。两港六种货都有标价（`test_market` 断言：双向各至少两种货有赚头、买得到的货对岸都收）。
   待办：出資入股、行情涨跌。
 - [~] 直达航行（核心循环：低买 → 航行 → 高卖）：`ports.json` 每港带 `routes: [{to, days}]`（`Market.routes`）。
-  港务局「啟航出海」（`set_sail`）或走进 `Departure` 出航区（`PortSession.open_departure`，取消回到走路）→ 单选目的地 →
+  港务局「啟航出海」（`set_sail`）或在 `Departure` 出航区里朝海推（-Z 朝海，同门的判定）（`PortSession.open_departure`，取消回到走路）→ 单选目的地 →
   `world.day += days`、`world.port_id = 目的港`、`world.notice` = 抵港通知（不进存档，下个港口场景显示几秒并清空）→
   `Mode.SAILED`（终态，本会话不再接受任何动作）；`DoorFlow.pick` 见到 SAILED 就调 `enter_port`（默认 `PortScene3D.enter`，
   测试注入假函数以免换掉 GUT 的场景）。agent：observe 带 `port {id, name}`，启航后旧 port 被释放，用 `PortAgent.current(tree)` 取新港。

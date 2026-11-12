@@ -8,7 +8,6 @@ signal confirmed(amount: int)
 signal cancelled
 
 const STEP_SMALL := 100
-const STEP_BIG := 1000
 
 var _amount: int = 0
 var _max: int = 0
