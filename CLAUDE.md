@@ -104,7 +104,7 @@ Python 一律用 `uv`（`uv sync` 装依赖、`uv run` 执行、`uv add` 加包�
   代码 lint 写在 `tests/unit/test_lint.gd`（随 GUT 跑；规则表：process-mode-disabled / full-rect-mouse-filter /
   gui-input-mouse-filter / accept-needs-mouse / input-must-consume / input-state-gate，违规须修或同行 `# lint-allow: <id>` 写明理由）。
   关卡几何 lint 写在 `tests/unit/test_lint_ports.gd`（每个 ports/*.tscn 从 Spawn 用主角胶囊洪泛：
-  port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到 / port-departure-facing 出航区 -Z 没朝海）。
+  port-void 走得到却脚下没地面 / port-ledge 无遮挡落差 > 一级台阶 / port-unreachable 门或出航区走不到 / port-door-facing 门 -Z 没指进建筑 / port-departure-facing 出航区 -Z 没朝海）。
   里斯本现有八扇门：交易所/酒馆/港务局/造船所（码头一排）、教会/王宫/行会（台地）、银行（槽 8，广场东侧，门朝西——从广场往东走进去）。
   塞維利亞（港 1，河港：广场北排交易所/酒馆/港务局、西侧银行门朝东、东岸栈桥出航）是第二座港。
   待办：港内 NPC（旧 2D 的 NpcCrowd 已随网格港删除，需按 3D 重做）；主角像素走路动画。

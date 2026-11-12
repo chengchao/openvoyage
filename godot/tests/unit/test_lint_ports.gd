@@ -12,6 +12,7 @@ const RULES := {
 	"port-void": "走得到的地方脚下没有地面，主角会无限下坠（里斯本台阶两侧曾是空的）。补地面或加隐形墙。",
 	"port-ledge": "走得到的边缘下方落差超过一级台阶，主角会掉下去（里斯本台地前缘曾无遮挡）。边缘加隐形墙（Bounds）。",
 	"port-unreachable": "从 Spawn 走不到这扇门/出航区，多半是隐形墙把路堵了。",
+	"port-door-facing": "门 -Z 身后 1.5 米走不到、或前方 1.5 米走得到：门没朝着建筑，玩家得背着建筑推、甚至站不到推的位置。把门绕 Y 转到 -Z 指进建筑（.tscn 的 Transform3D 按行写）。",
 	"port-departure-facing": "出航区 -Z 前方 3 米有地面、或身后 3 米没地面：Departure 没朝海，朝海推不会问去哪。把 Departure 绕 Y 转到 -Z 指向水面。",
 }
 
@@ -95,6 +96,12 @@ static func violations(port: PortScene3D, path: String) -> PackedStringArray:
 	for t: Area3D in targets:
 		if not reaches(result.reached, t):
 			by_rule.get_or_add("port-unreachable", []).append(t.global_position)
+	var cell := func(p: Vector3) -> Vector2i: return Vector2i(roundi(p.x / CELL), roundi(p.z / CELL))
+	for door: Area3D in port.find_children("*", "PortDoor", true, false):
+		var inward := -door.global_basis.z
+		if not result.reached.has(cell.call(door.global_position - inward * 1.5)) \
+				or result.reached.has(cell.call(door.global_position + inward * 1.5)):
+			by_rule.get_or_add("port-door-facing", []).append(door.global_position)
 	var departure := port.get_node("Departure") as Area3D
 	var ground := func(along: float) -> bool:
 		var p := departure.global_position - departure.global_basis.z * along
