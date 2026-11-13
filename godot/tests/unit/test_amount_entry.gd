@@ -26,13 +26,13 @@ func test_adjust_steps() -> void:
 	var e := _entry(10000, 0)
 	e.adjust(AmountEntry.STEP_SMALL)
 	assert_eq(e.amount(), 100)
-	e.adjust(AmountEntry.STEP_BIG)
+	e.adjust(AmountEntry.STEP_SMALL * 10)
 	assert_eq(e.amount(), 1100)
 
 
 func test_confirm_emits_amount() -> void:
 	var e := _entry(5000, 0)
-	e.adjust(AmountEntry.STEP_BIG)
+	e.adjust(AmountEntry.STEP_SMALL * 10)
 	watch_signals(e)
 	e.confirm()
 	assert_signal_emitted_with_parameters(e, "confirmed", [1000])

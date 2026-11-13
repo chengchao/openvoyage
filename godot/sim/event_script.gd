@@ -31,10 +31,6 @@ static func load_shipped() -> EventScript:
 	return EventScript.new(doc) if typeof(doc) == TYPE_DICTIONARY else null
 
 
-func chapter_count() -> int:
-	return chapters.size()
-
-
 func chapter_script(ch: int) -> Array:
 	if ch < 0 or ch >= chapters.size():
 		return []
